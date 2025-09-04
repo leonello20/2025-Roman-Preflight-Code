@@ -2,6 +2,7 @@
 import proper
 import numpy as np
 import matplotlib.pylab as plt
+from energy_conservation import energy
 
 # def coronagraph(wfo, f_lens, occulter_type, diam, offset_x=0.0, offset_y=0.0, zernike_coeffs=None, is_plotting=False):
 
@@ -36,6 +37,10 @@ def coronagraph(wfo, f_lens, occulter_type, diam, occrad):
     proper.prop_propagate(wfo, f_lens, "occulter") # Propagate f_lens to reach focal plane
     # EXPECTED Sampling at F1 for beam_ratio=1.0: (wavelength * f_lens) / diam = (0.5e-6 * 2.4) / 0.1 = 1.2e-5 m/pixel
     print(f"DEBUG: Sampling at occulter plane (F1): {proper.prop_get_sampling(wfo):.2e} m/pixel (Expected ~1.2e-5)")
+
+    # Find the energy before applying the occulter
+    pre_occulter_energy = energy(wfo)
+    print(f"Energy in the wavefront before occulter: {pre_occulter_energy:.4f}")
 
     lamda = proper.prop_get_wavelength(wfo)
 
@@ -74,6 +79,10 @@ def coronagraph(wfo, f_lens, occulter_type, diam, occrad):
     # Apply Lens 2 (L2)
     proper.prop_lens(wfo, f_lens, "pupil reimaging lens (L2)")
     print(f"DEBUG: After Lens 2: {proper.prop_get_sampling(wfo):.2e} m/pixel") # Sampling should be at the lens, not changed yet.
+
+    # Find the energy after applying the occulter and before Lyot stop
+    post_occulter_energy = energy(wfo)
+    print(f"Energy in the wavefront after occulter, before Lyot stop: {post_occulter_energy:.4f}")
 
     # Propagate from L2 to Lyot Stop plane (PP2). This is another f_lens.
     proper.prop_propagate(wfo, f_lens, "Propagate L2 to Lyot Stop (PP2)")

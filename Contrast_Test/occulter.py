@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from coronagraph import coronagraph # Import the coronagraph function from its module
+from energy_conservation import energy
 
 def occulter(wavelength, diam, grid_size, occrad, PASSVALUE={'occulter_type': 'GAUSSIAN'}):
     f_lens = 24 * diam # Focal length of lenses (in meters)
@@ -11,6 +12,10 @@ def occulter(wavelength, diam, grid_size, occrad, PASSVALUE={'occulter_type': 'G
 
     # 1. Initialize the wavefront at the entrance pupil
     wfo = proper.prop_begin(diam, wavelength, grid_size, beam_ratio)
+
+    # Find the energy before going through the coronagraph
+    initial_energy = energy(wfo)
+    print(f"Initial energy in the wavefront: {initial_energy:.4f}")
 
     # 2. Apply the primary aperture (telescope pupil)
     proper.prop_circular_aperture(wfo, diam) # Use diam directly for the diameter

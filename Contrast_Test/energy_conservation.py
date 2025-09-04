@@ -14,7 +14,11 @@ def energy(wfo):
     """
     wfo_amplitude = proper.prop_get_amplitude(wfo)  # Ensure wfo is a numpy array
     wfo_intensity = np.abs(wfo_amplitude)**2  # Intensity is the squared magnitude of the amplitude
+
+    sampling = proper.prop_get_sampling(wfo)  # Get the sampling in meters
+    pixel_area = sampling**2  # Area of each pixel in square meters
+    pixel_area = 1
     
     # Sum over all pixels to get total energy
-    total_energy = np.sum(wfo_intensity)
+    total_energy = np.sum(wfo_intensity)*pixel_area
     return total_energy
