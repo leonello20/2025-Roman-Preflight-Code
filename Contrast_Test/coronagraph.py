@@ -39,7 +39,7 @@ def coronagraph(wfo, f_lens, occulter_type, diam, occrad):
     print(f"DEBUG: Sampling at occulter plane (F1): {proper.prop_get_sampling(wfo):.2e} m/pixel (Expected ~1.2e-5)")
 
     # Find the energy before applying the occulter
-    pre_occulter_energy = energy(wfo)
+    pre_occulter_energy = energy(wfo, title="Wavefront Energy Before Occulter")
     print(f"Energy in the wavefront before occulter: {pre_occulter_energy:.4f}")
 
     lamda = proper.prop_get_wavelength(wfo)
@@ -80,10 +80,6 @@ def coronagraph(wfo, f_lens, occulter_type, diam, occrad):
     proper.prop_lens(wfo, f_lens, "pupil reimaging lens (L2)")
     print(f"DEBUG: After Lens 2: {proper.prop_get_sampling(wfo):.2e} m/pixel") # Sampling should be at the lens, not changed yet.
 
-    # Find the energy after applying the occulter and before Lyot stop
-    post_occulter_energy = energy(wfo)
-    print(f"Energy in the wavefront after occulter, before Lyot stop: {post_occulter_energy:.4f}")
-
     # Propagate from L2 to Lyot Stop plane (PP2). This is another f_lens.
     proper.prop_propagate(wfo, f_lens, "Propagate L2 to Lyot Stop (PP2)")
     # EXPECTED Sampling at PP2: Should be back to initial pupil-like sampling (diam / grid_size = 0.1 / 512 = 1.95e-4 m/pixel)
@@ -93,6 +89,10 @@ def coronagraph(wfo, f_lens, occulter_type, diam, occrad):
     plt.text(proper.prop_get_gridsize(wfo), proper.prop_get_gridsize(wfo), "Before Lyot Stop", color = "w", horizontalalignment='right')
     plt.show()
     
+    # Find the energy after applying the occulter and before Lyot stop
+    post_occulter_energy = energy(wfo, title="Wavefront Energy After Occulter, Before Lyot Stop")
+    print(f"Energy in the wavefront after occulter, before Lyot stop: {post_occulter_energy:.4f}")
+
     if occulter_type == "GAUSSIAN":
         proper.prop_circular_aperture(wfo, 0.80, NORM = True)
     elif occulter_type == "SOLID":

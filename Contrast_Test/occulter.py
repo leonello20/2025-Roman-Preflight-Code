@@ -13,19 +13,20 @@ def occulter(wavelength, diam, grid_size, occrad, PASSVALUE={'occulter_type': 'G
     # 1. Initialize the wavefront at the entrance pupil
     wfo = proper.prop_begin(diam, wavelength, grid_size, beam_ratio)
 
-    # Find the energy before going through the coronagraph
-    initial_energy = energy(wfo)
-    print(f"Initial energy in the wavefront: {initial_energy:.4f}")
-
     # 2. Apply the primary aperture (telescope pupil)
     proper.prop_circular_aperture(wfo, diam) # Use diam directly for the diameter
 
     # 3. Define this as the entrance pupil for PROPER
     proper.prop_define_entrance(wfo)
 
+    # Find the energy before going through the coronagraph
+    initial_energy = energy(wfo, title="Initial Wavefront Energy")
+    print(f"Initial energy in the wavefront: {initial_energy:.4f}")
+
     # 4. Call the coronagraph function to simulate the coronagraphic optics
     coronagraph(wfo, f_lens, PASSVALUE["occulter_type"], diam, occrad)
 
     # 5. End the PROPER simulation for this entire optical train
     sampling = proper.prop_get_sampling(wfo)
+    
     return (wfo, sampling)
