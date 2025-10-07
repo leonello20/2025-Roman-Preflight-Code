@@ -32,7 +32,7 @@ focal_star = prop.forward(wavefront_star)
 # obtain wavefront at telescope pupil and focal planes for the planet
 contrast = 1e-2  # Planet-to-star contrast
 # Planet offset in units of lambda/D
-planet_offset_x = 15
+planet_offset_x = 10
 planet_offset_y = 0
 wavefront_planet = hp.Wavefront(contrast * telescope_pupil * np.exp(2j * np.pi * pupil_grid.x * planet_offset_x) * np.exp(2j * np.pi * pupil_grid.y * planet_offset_y))
 focal_planet = prop.forward(wavefront_planet)
