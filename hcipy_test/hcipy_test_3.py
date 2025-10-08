@@ -30,7 +30,7 @@ wavefront_star = hp.Wavefront(telescope_pupil)
 focal_star = prop.forward(wavefront_star)
 
 # obtain wavefront at telescope pupil and focal planes for the planet
-contrast = 1e-5 # Planet-to-star contrast
+contrast = 1 # Planet-to-star contrast
 # Planet offset in units of lambda/D
 planet_offset_x = 15
 planet_offset_y = 0
@@ -51,19 +51,27 @@ plt.ylabel('y / D')
 plt.show()
 
 # apply Gaussian occulter in focal plane (Lyot Coronagraph)
-def gaussian_occulter_generator(grid,sigma_lambda_d):
-    r_term = (np.sqrt(grid.x**2 + grid.y**2) / sigma_lambda_d)
-    transmission_field = 1.0 - np.exp(-0.5 * r_term**2)
+def eigth_order_mask(grid,l,m,a,epsilon):
+    x = grid.x
+    x = np.sqrt(grid.x**2 + grid.y**2)
+    transmission_field = 0
+    if (x.any() == 0):
+        transmission_field = 0
+    else:
+        transmission_field = a*(((l-m)/l - (np.sinc(np.pi*x*epsilon/l)**l) + (m/l)*(np.sinc(np.pi*x*epsilon/m)**m)))**2
     return transmission_field
 
 # create the Lyot Stop mask
-ratio = 0.8 # Lyot Stop diameter ratio
+ratio = 1.0 # Lyot Stop diameter ratio
 lyot_stop_generator = hp.make_circular_aperture(ratio*diameter) # percentage of the telescope diameter
 lyot_stop_mask = lyot_stop_generator(pupil_grid)
 
-# create the occulter mask
-sigma_lambda_d = 5
-occulter_mask = gaussian_occulter_generator(focal_grid,sigma_lambda_d)
+# create the occulter mask (8th order mask)
+l = 3
+m = 1
+a = 2
+epsilon = 0.2
+occulter_mask = eigth_order_mask(focal_grid,l,m,a,epsilon)
 occulter_mask = hp.Field(occulter_mask,focal_grid)
 prop_lyot = hp.LyotCoronagraph(focal_grid,occulter_mask,lyot_stop_mask)
 focal_star_occulter_lyot = prop_lyot.forward(wavefront_star)
