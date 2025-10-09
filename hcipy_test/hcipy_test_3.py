@@ -30,7 +30,7 @@ wavefront_star = hp.Wavefront(telescope_pupil)
 focal_star = prop.forward(wavefront_star)
 
 # obtain wavefront at telescope pupil and focal planes for the planet
-contrast = 1 # Planet-to-star contrast
+contrast = 1e-2 # Planet-to-star contrast
 # Planet offset in units of lambda/D
 planet_offset_x = 15
 planet_offset_y = 0
@@ -70,7 +70,7 @@ lyot_stop_mask = lyot_stop_generator(pupil_grid)
 l = 3
 m = 1
 a = 2
-epsilon = 0.2
+epsilon = 0.1
 occulter_mask = eigth_order_mask(focal_grid,l,m,a,epsilon)
 occulter_mask = hp.Field(occulter_mask,focal_grid)
 prop_lyot = hp.LyotCoronagraph(focal_grid,occulter_mask,lyot_stop_mask)
