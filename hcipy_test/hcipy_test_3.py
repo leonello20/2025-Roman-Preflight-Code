@@ -30,9 +30,10 @@ wavefront_star = hp.Wavefront(telescope_pupil)
 focal_star = prop.forward(wavefront_star)
 
 # obtain wavefront at telescope pupil and focal planes for the planet
-contrast = 1e-2 # Planet-to-star contrast
+contrast = 1e-3 # Planet-to-star contrast
+
 # Planet offset in units of lambda/D
-planet_offset_x = 15
+planet_offset_x = 10
 planet_offset_y = 0
 wavefront_planet = hp.Wavefront(contrast * telescope_pupil * np.exp(2j * np.pi * pupil_grid.x * planet_offset_x) * np.exp(2j * np.pi * pupil_grid.y * planet_offset_y))
 focal_planet = prop.forward(wavefront_planet)
@@ -62,7 +63,7 @@ def eigth_order_mask(grid,l,m,a,epsilon):
     return transmission_field
 
 # create the Lyot Stop mask
-ratio = 1.0 # Lyot Stop diameter ratio
+ratio = 0.6 # Lyot Stop diameter ratio
 lyot_stop_generator = hp.make_circular_aperture(ratio*diameter) # percentage of the telescope diameter
 lyot_stop_mask = lyot_stop_generator(pupil_grid)
 
@@ -74,12 +75,12 @@ epsilon = 0.1
 occulter_mask = eigth_order_mask(focal_grid,l,m,a,epsilon)
 occulter_mask = hp.Field(occulter_mask,focal_grid)
 prop_lyot = hp.LyotCoronagraph(focal_grid,occulter_mask,lyot_stop_mask)
-focal_star_occulter_lyot = prop_lyot.forward(wavefront_star)
-focal_planet_occulter_lyot = prop_lyot.forward(wavefront_planet)
-focal_total_occulter_intensity_lyot = focal_star_occulter_lyot.intensity + focal_planet_occulter_lyot.intensity
+lyot_star_occulter_lyot = prop_lyot.forward(wavefront_star)
+lyot_planet_occulter_lyot = prop_lyot.forward(wavefront_planet)
+lyot_total_occulter_intensity_lyot = lyot_star_occulter_lyot.intensity + lyot_planet_occulter_lyot.intensity
 
 # plot the focal plane intensity (star + planet) with occulter
-hp.imshow_field(np.log10(focal_total_occulter_intensity_lyot/focal_total_occulter_intensity_lyot.max()))
+hp.imshow_field(np.log10(lyot_total_occulter_intensity_lyot/lyot_total_occulter_intensity_lyot.max()))
 plt.title("Final Coronagraphic Image (Occulter + Lyot Stop)")
 plt.colorbar(label='Contrast ($\log_{10}(I/I_{star})$)')
 plt.xlabel('x / D')
@@ -87,8 +88,8 @@ plt.ylabel('y / D')
 plt.show()
 
 # propagate the wavefront to the focal plane
-wavefront_focal_after_occulter_star = prop.forward(focal_star_occulter_lyot)
-wavefront_focal_after_occulter_planet = prop.forward(focal_planet_occulter_lyot)
+wavefront_focal_after_occulter_star = prop.forward(lyot_star_occulter_lyot)
+wavefront_focal_after_occulter_planet = prop.forward(lyot_planet_occulter_lyot)
 wavefront_focal_after_occulter_total_intensity = wavefront_focal_after_occulter_star.intensity + wavefront_focal_after_occulter_planet.intensity
 
 # plot the focal plane intensity (star + planet) after occulter
