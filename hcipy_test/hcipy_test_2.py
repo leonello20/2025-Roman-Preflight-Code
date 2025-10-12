@@ -51,7 +51,7 @@ focal_total_intensity = focal_star.intensity + focal_planet.intensity
 
 # plot the focal plane intensity (star + planet) (before occulter, after lens 1)
 hp.imshow_field(np.log10(focal_total_intensity/focal_total_intensity.max()))
-plt.colorbar(label='Contrast ($\log_{10}(I/I_{star})$)')
+plt.colorbar(label='Contrast ($\log_{10}(I/I_{total})$)')
 plt.title("Intensity (Focal Plane, Before Occulter, After Lens 1)")
 plt.xlabel('x / D')
 plt.ylabel('y / D')
@@ -72,7 +72,6 @@ occulter_mask = gaussian_occulter_generator(focal_grid,sigma_lambda_d)
 occulter_mask = hp.Field(occulter_mask,focal_grid)
 
 # plot the focal plane intensity (star + planet) with occulter (focal plane, after lens 1)
-
 E_focal_total = focal_star.electric_field + focal_planet.electric_field
 
 # apply the occulter mask (Field * Field multiplication IS SUPPORTED for Field/Field on the same grid)
@@ -81,25 +80,27 @@ E_focal_after_occulter = E_focal_total * occulter_mask
 # Calculate the intensity for plotting (Intensity = |E|^2)
 I_focal_after_occulter = np.abs(E_focal_after_occulter)**2
 
-# wf = occulter_mask(focal_star)
+# plot the focal plane intensity (star + planet) with occulter (focal plane, after lens 1) (not a log scale)
 hp.imshow_field(I_focal_after_occulter/I_focal_after_occulter.max())
-# hp.imshow_field(np.log10(wf.intensity/wf.intensity.max()))
-plt.colorbar(label='Contrast ($I/I_{star}$)')
+plt.colorbar(label='Contrast ($I/I_{total}$)')
 plt.title("Intensity (Focal Plane, AFTER Occulter)")
 plt.xlabel('x / D')
 plt.ylabel('y / D')
 plt.show()
 
 # after lens 2 but before Lyot Stop
-# wavefront_after_occulter_focal = hp.Wavefront(E_focal_after_occulter, focal_grid)
-# wavefront_after_occulter_pupil = prop.backward(wavefront_after_occulter_focal)
-# plot the pupil plane intensity (star + planet) after occulter (pupil plane, after lens 2, before Lyot Stop)
-# hp.imshow_field((wavefront_after_occulter_pupil.intensity/wavefront_after_occulter_pupil.intensity.max()))
-# plt.colorbar(label='Contrast ($\log_{10}(I/I_{star})$)')
-# plt.title("Intensity After Occulter (Pupil Plane, After Lens 2, Before Lyot Stop)")
-# plt.xlabel('x / D')
-# lt.ylabel('y / D')
-# plt.show()
+prop_no_lyot = hp.LyotCoronagraph(focal_grid,occulter_mask)
+star_occulter_no_lyot = prop_no_lyot.forward(wavefront_star)
+planet_occulter_no_lyot = prop_no_lyot.forward(wavefront_planet)
+total_intensity_occulter_no_lyot = star_occulter_no_lyot.intensity + planet_occulter_no_lyot.intensity
+
+# plot the pupil (Lyot) plane intensity (star + planet) with occulter and no Lyot Stop (pupil (Lyot) plane, after lens 2) (not a log scale)
+hp.imshow_field(total_intensity_occulter_no_lyot/total_intensity_occulter_no_lyot.max())
+plt.colorbar(label='Contrast ($I/I_{total}$)')
+plt.title("Pupil (Lyot) Plane Intensity (Occulter, No Lyot Stop) (Lyot Plane, After Lens 2)")
+plt.xlabel('x / D')
+plt.ylabel('y / D')
+plt.show()
 
 # create the occulter mask and Lyot Stop in the Lyot Coronagraph
 ratio = 0.8 # Lyot Stop diameter ratio
@@ -112,7 +113,7 @@ total_intensity_occulter_lyot = star_occulter_lyot.intensity + planet_occulter_l
 
 # plot the focal plane intensity (star + planet) with occulter and Lyot Stop (Lyot (pupil) plane, after lens 2)
 hp.imshow_field(np.log10(total_intensity_occulter_lyot/total_intensity_occulter_lyot.max()))
-plt.colorbar(label='Contrast ($\log_{10}(I/I_{star})$)')
+plt.colorbar(label='Contrast ($\log_{10}(I/I_{toal})$)')
 plt.title("Final Coronagraphic Image (Occulter + Lyot Stop) (Lyot Plane, After Lens 2)")
 plt.xlabel('x / D')
 plt.ylabel('y / D')
@@ -125,7 +126,7 @@ wavefront_focal_after_occulter_total_intensity = wavefront_focal_after_occulter_
 
 # plot the focal plane intensity (star + planet) after Lyot Stop
 hp.imshow_field(np.log10(wavefront_focal_after_occulter_total_intensity/wavefront_focal_after_occulter_total_intensity.max()))
-plt.colorbar(label='Contrast ($\log_{10}(I/I_{star})$)')
+plt.colorbar(label='Contrast ($\log_{10}(I/I_{total})$)')
 plt.title("Intensity After Lyot Stop (Focal Plane, After Lens 3)")
 plt.xlabel('x / D')
 plt.ylabel('y / D')

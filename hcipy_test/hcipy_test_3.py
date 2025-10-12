@@ -65,11 +65,6 @@ def eigth_order_mask(grid,l,m,a,epsilon):
         transmission_field = a*(((l-m)/l - (np.sinc(np.pi*r*epsilon/l)**l) + (m/l)*(np.sinc(np.pi*r*epsilon/m)**m)))**2
     return transmission_field
 
-# create the Lyot Stop mask
-ratio = 0.6 # Lyot Stop diameter ratio
-lyot_stop_generator = hp.make_circular_aperture(ratio*diameter) # percentage of the telescope diameter
-lyot_stop_mask = lyot_stop_generator(pupil_grid)
-
 # create the occulter mask (8th order mask)
 l = 3
 m = 1
@@ -77,13 +72,8 @@ a = 2
 epsilon = 0.1
 occulter_mask = eigth_order_mask(focal_grid,l,m,a,epsilon)
 occulter_mask = hp.Field(occulter_mask,focal_grid)
-prop_lyot = hp.LyotCoronagraph(focal_grid,occulter_mask,lyot_stop_mask)
-star_occulter_lyot = prop_lyot.forward(wavefront_star)
-planet_occulter_lyot = prop_lyot.forward(wavefront_planet)
-total_intensity_occulter_lyot = star_occulter_lyot.intensity + planet_occulter_lyot.intensity
 
 # plot the focal plane intensity (star + planet) with occulter (focal plane, after lens 1)
-
 E_focal_total = focal_star.electric_field + focal_planet.electric_field
 
 # apply the occulter mask (Field * Field multiplication IS SUPPORTED for Field/Field on the same grid)
@@ -92,12 +82,36 @@ E_focal_after_occulter = E_focal_total * occulter_mask
 # Calculate the intensity for plotting (Intensity = |E|^2)
 I_focal_after_occulter = np.abs(E_focal_after_occulter)**2
 
+# plot the focal plane intensity (star + planet) with occulter (focal plane, after lens 1) (not a log scale)
 hp.imshow_field(I_focal_after_occulter/I_focal_after_occulter.max())
 plt.colorbar(label='Contrast ($I/I_{star}$)')
 plt.title("Intensity (Focal Plane, AFTER Occulter)")
 plt.xlabel('x / D')
 plt.ylabel('y / D')
 plt.show()
+
+# after lens 2 but before Lyot Stop
+prop_no_lyot = hp.LyotCoronagraph(focal_grid,occulter_mask)
+star_occulter_no_lyot = prop_no_lyot.forward(wavefront_star)
+planet_occulter_no_lyot = prop_no_lyot.forward(wavefront_planet)
+total_intensity_occulter_no_lyot = star_occulter_no_lyot.intensity + planet_occulter_no_lyot.intensity
+
+# plot the pupil (Lyot) plane intensity (star + planet) with occulter and no Lyot Stop (pupil (Lyot) plane, after lens 2) (not a log scale)
+hp.imshow_field(total_intensity_occulter_no_lyot/total_intensity_occulter_no_lyot.max())
+plt.colorbar(label='Contrast ($I/I_{total}$)')
+plt.title("Pupil (Lyot) Plane Intensity (Occulter, No Lyot Stop) (Lyot Plane, After Lens 2)")
+plt.xlabel('x / D')
+plt.ylabel('y / D')
+plt.show()
+
+# create the occulter mask and Lyot Stop in the Lyot Coronagraph
+ratio = 0.6 # Lyot Stop diameter ratio
+lyot_stop_generator = hp.make_circular_aperture(ratio*diameter) # percentage of the telescope diameter
+lyot_stop_mask = lyot_stop_generator(pupil_grid)
+prop_lyot = hp.LyotCoronagraph(focal_grid,occulter_mask,lyot_stop_mask)
+star_occulter_lyot = prop_lyot.forward(wavefront_star)
+planet_occulter_lyot = prop_lyot.forward(wavefront_planet)
+total_intensity_occulter_lyot = star_occulter_lyot.intensity + planet_occulter_lyot.intensity
 
 # plot the focal plane intensity (star + planet) with occulter and Lyot Stop (Lyot (pupil) plane, after lens 2)
 hp.imshow_field(np.log10(total_intensity_occulter_lyot/total_intensity_occulter_lyot.max()))
