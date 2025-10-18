@@ -11,7 +11,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 # --- ANIMATION PARAMETERS ---
 # Varying planet separation from 2 to 25 lambda/D
-separation_range = np.linspace(2, 25, 50) 
+sigma_range = np.linspace(0, 10, 50)
 vmin = -10 # Log contrast minimum for plotting (adjust based on your sqrt_contrast)
 vmax = 0  # Log contrast maximum for plotting
 
@@ -29,13 +29,13 @@ im_handle = hp.imshow_field(
     vmax=vmax,
     ax=ax
 )
-plt.colorbar(im_handle, label='Contrast ($\log_{10}(I/I_{star})$)')
+plt.colorbar(im_handle, label='Contrast ($\log_{10}(I/I_{total})$)')
 # ax.set_title("Coronagraphic Image (Separation: 0.0 $\lambda/D$)")
 title = ax.set_title("")
 ax.set_xlabel('x / D')
 ax.set_ylabel('y / D')
 
-def animate_coronagraph(planet_offset_x):
+def animate_coronagraph_gaussian_sigma(sigma_lambda_d):
     aperture_scale = 1.5
     grid_size = 256
     local_grid_size = 256 # Defined here for use in reshape/normalization
@@ -57,7 +57,7 @@ def animate_coronagraph(planet_offset_x):
     sqrt_contrast = 1e-5 # Planet-to-star contrast (note: sqrt because we are working with the electric field, )
 
     # Planet offset in units of lambda/D
-    # planet_offset_x = 15
+    planet_offset_x = 15
     planet_offset_y = 0
     wavefront_planet = hp.Wavefront(sqrt_contrast * telescope_pupil * np.exp(2j * np.pi * pupil_grid.x * planet_offset_x) * np.exp(2j * np.pi * pupil_grid.y * planet_offset_y))
 
@@ -74,7 +74,7 @@ def animate_coronagraph(planet_offset_x):
     focal_total_intensity = focal_star.intensity + focal_planet.intensity
 
     # create the Gaussian occulter mask
-    sigma_lambda_d = 5
+    # sigma_lambda_d = 5
     occulter_mask = gaussian_occulter_generator(focal_grid,sigma_lambda_d)
     occulter_mask = hp.Field(occulter_mask,focal_grid)
 
@@ -123,25 +123,18 @@ def animate_coronagraph(planet_offset_x):
     # new_title = f"Intensity After Lyot Stop (Separation: {planet_offset_x:.2f} $\lambda/D$)"
     # ax.title.set_text(new_title)
     # ax.set_title("Coronagraphic Image (Separation: {:.2f} $\lambda/D$)".format(planet_offset_x))
-    title.set_text(f"Coronagraphic Image (Separation: {planet_offset_x:.2f} $\lambda/D$)") 
+    title.set_text(f"Coronagraphic Image (Separation: {sigma_lambda_d:.2f} $\lambda/D$)") 
 
     # Return the updated artists for blitting
-    return im_handle, title
+    return im_handle,
 
 # Create the animation over planet_offset_x variable
 ani = FuncAnimation(
     fig,
-    animate_coronagraph, 
-    frames=separation_range, # Use the list of separations as frames
+    animate_coronagraph_gaussian_sigma, 
+    frames=sigma_range, # Use the list of separations as frames
     blit=False, 
-    interval=10 # milliseconds between frames
+    interval=100 # milliseconds between frames
 )
 
-# NOTE: To see the animation, you need to save it or display it.
-# If running in a Jupyter environment, uncomment the first line:
-# from IPython.display import HTML
-# HTML(ani.to_jshtml()) 
-# If running in a script, you can save it:
-# ani.save('coronagraph_separation_animation.mp4', writer='ffmpeg')
-
-plt.show() # Call plt.show() to start the interactive plot (usually works in IDEs)
+plt.show()
