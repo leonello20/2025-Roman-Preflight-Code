@@ -1,0 +1,81 @@
+import hcipy as hp
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import animation
+from matplotlib.animation import FuncAnimation
+import warnings
+from gaussian_occulter import gaussian_occulter_generator
+# from animation import animate_coronagraph
+# Suppress RuntimeWarnings globally
+warnings.filterwarnings("ignore", category=RuntimeWarning)
+
+def animate_coronagraph(planet_offset_x):
+    aperture_scale = 1.5
+    grid_size = 256
+    pupil_grid = hp.make_pupil_grid(grid_size,aperture_scale)
+    diameter = 1 # meters
+
+    telescope_pupil_generator = hp.make_circular_aperture(diameter)
+
+    telescope_pupil = telescope_pupil_generator(pupil_grid)
+
+    # define propagator (pupil to focal)
+    focal_grid = hp.make_focal_grid(q=8, num_airy=16)
+    prop = hp.FraunhoferPropagator(pupil_grid, focal_grid)
+
+    # obtain wavefront at telescope pupil plane for the star
+    wavefront_star = hp.Wavefront(telescope_pupil)
+
+    # obtain wavefront at telescope pupil plane for the planet
+    sqrt_contrast = 1e-5 # Planet-to-star contrast (note: sqrt because we are working with the electric field, )
+
+    # Planet offset in units of lambda/D
+    # planet_offset_x = 15
+    planet_offset_y = 0
+    wavefront_planet = hp.Wavefront(sqrt_contrast * telescope_pupil * np.exp(2j * np.pi * pupil_grid.x * planet_offset_x) * np.exp(2j * np.pi * pupil_grid.y * planet_offset_y))
+
+    # obtain total wavefront intensity at pupil plane
+    wavefront_total_intensity = wavefront_star.intensity + wavefront_planet.intensity
+
+    # obtain the wavefront intensity at focal plane for the star
+    focal_star = prop.forward(wavefront_star)
+
+    # obtain the wavefront intensity at focal plane for the planet
+    focal_planet = prop.forward(wavefront_planet)
+
+    # obtain total wavefront intensity at focal plane
+    focal_total_intensity = focal_star.intensity + focal_planet.intensity
+
+    # create the Gaussian occulter mask
+    sigma_lambda_d = 5
+    occulter_mask = gaussian_occulter_generator(focal_grid,sigma_lambda_d)
+    occulter_mask = hp.Field(occulter_mask,focal_grid)
+
+    # plot the focal plane intensity (star + planet) with occulter (focal plane, after lens 1)
+    E_focal_total = focal_star.electric_field + focal_planet.electric_field
+
+    # apply the occulter mask (Field * Field multiplication IS SUPPORTED for Field/Field on the same grid)
+    E_focal_after_occulter = E_focal_total * occulter_mask
+
+    # Calculate the intensity for plotting (Intensity = |E|^2)
+    I_focal_after_occulter = np.abs(E_focal_after_occulter)**2
+
+    # after lens 2 but before Lyot Stop
+    prop_no_lyot = hp.LyotCoronagraph(focal_grid,occulter_mask)
+    star_occulter_no_lyot = prop_no_lyot.forward(wavefront_star)
+    planet_occulter_no_lyot = prop_no_lyot.forward(wavefront_planet)
+    total_intensity_occulter_no_lyot = star_occulter_no_lyot.intensity + planet_occulter_no_lyot.intensity
+
+    # create the occulter mask and Lyot Stop in the Lyot Coronagraph
+    ratio = 0.8 # Lyot Stop diameter ratio
+    lyot_stop_generator = hp.make_circular_aperture(ratio*diameter) # percentage of the telescope diameter
+    lyot_stop_mask = lyot_stop_generator(pupil_grid)
+    prop_lyot = hp.LyotCoronagraph(focal_grid,occulter_mask,lyot_stop_mask)
+    star_occulter_lyot = prop_lyot.forward(wavefront_star)
+    planet_occulter_lyot = prop_lyot.forward(wavefront_planet)
+    total_intensity_occulter_lyot = star_occulter_lyot.intensity + planet_occulter_lyot.intensity
+
+    # propagate the wavefront to the focal plane
+    wavefront_focal_after_occulter_star = prop.forward(star_occulter_lyot)
+    wavefront_focal_after_occulter_planet = prop.forward(planet_occulter_lyot)
+    wavefront_focal_after_occulter_total_intensity = wavefront_focal_after_occulter_star.intensity + wavefront_focal_after_occulter_planet.intensity
