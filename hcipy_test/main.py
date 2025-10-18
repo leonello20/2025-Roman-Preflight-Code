@@ -5,14 +5,14 @@ from matplotlib import animation
 from matplotlib.animation import FuncAnimation
 import warnings
 from gaussian_occulter import gaussian_occulter_generator
-# from animation import animate_coronagraph
+from contrast_curve import contrast_curve
 # Suppress RuntimeWarnings globally
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-aperture_scale = 1.5
+aperture_scale = 2
 grid_size = 256
 pupil_grid = hp.make_pupil_grid(grid_size,aperture_scale)
-diameter = 1 # meters
+diameter = 1.0 # meters
 
 telescope_pupil_generator = hp.make_circular_aperture(diameter)
 
@@ -27,7 +27,7 @@ plt.ylabel('y / D')
 plt.show()
 
 # define propagator (pupil to focal)
-focal_grid = hp.make_focal_grid(q=8, num_airy=16)
+focal_grid = hp.make_focal_grid(q=8, num_airy=20)
 prop = hp.FraunhoferPropagator(pupil_grid, focal_grid)
 
 # obtain wavefront at telescope pupil plane for the star
@@ -39,6 +39,8 @@ sqrt_contrast = 1e-5 # Planet-to-star contrast (note: sqrt because we are workin
 # Planet offset in units of lambda/D
 planet_offset_x = 15
 planet_offset_y = 0
+planet_offset_x = planet_offset_x/diameter
+planet_offset_y = planet_offset_y/diameter
 wavefront_planet = hp.Wavefront(sqrt_contrast * telescope_pupil * np.exp(2j * np.pi * pupil_grid.x * planet_offset_x) * np.exp(2j * np.pi * pupil_grid.y * planet_offset_y))
 
 # obtain total wavefront intensity at pupil plane
@@ -114,7 +116,7 @@ plt.xlabel('x / D')
 plt.ylabel('y / D')
 plt.show()
 
-# propagate the wavefront to the focal plane
+# propagate the wavefront to the focal plane (after lens 3)
 wavefront_focal_after_occulter_star = prop.forward(star_occulter_lyot)
 wavefront_focal_after_occulter_planet = prop.forward(planet_occulter_lyot)
 wavefront_focal_after_occulter_total_intensity = wavefront_focal_after_occulter_star.intensity + wavefront_focal_after_occulter_planet.intensity
@@ -126,3 +128,7 @@ plt.title("Intensity After Lyot Stop (Focal Plane, After Lens 3)")
 plt.xlabel('x / D')
 plt.ylabel('y / D')
 plt.show()
+
+# call the contrast curve function
+
+contrast_curve(wavefront_star,focal_grid,prop,wavefront_focal_after_occulter_total_intensity,planet_offset_x,sigma_lambda_d)

@@ -30,7 +30,6 @@ im_handle = hp.imshow_field(
     ax=ax
 )
 plt.colorbar(im_handle, label='Contrast ($\log_{10}(I/I_{total})$)')
-# ax.set_title("Coronagraphic Image (Separation: 0.0 $\lambda/D$)")
 title = ax.set_title("")
 ax.set_xlabel('x / D')
 ax.set_ylabel('y / D')
@@ -59,6 +58,8 @@ def animate_coronagraph_gaussian_sigma(sigma_lambda_d):
     # Planet offset in units of lambda/D
     planet_offset_x = 15
     planet_offset_y = 0
+    planet_offset_x = planet_offset_x/diameter
+    planet_offset_y = planet_offset_y/diameter
     wavefront_planet = hp.Wavefront(sqrt_contrast * telescope_pupil * np.exp(2j * np.pi * pupil_grid.x * planet_offset_x) * np.exp(2j * np.pi * pupil_grid.y * planet_offset_y))
 
     # obtain total wavefront intensity at pupil plane
@@ -119,10 +120,6 @@ def animate_coronagraph_gaussian_sigma(sigma_lambda_d):
     im_handle.set_data(reshaped_data)
     
     # Update the title
-    # ax.set_title(f"Intensity After Lyot Stop (Separation: {planet_offset_x_value:.2f} $\lambda/D$)")
-    # new_title = f"Intensity After Lyot Stop (Separation: {planet_offset_x:.2f} $\lambda/D$)"
-    # ax.title.set_text(new_title)
-    # ax.set_title("Coronagraphic Image (Separation: {:.2f} $\lambda/D$)".format(planet_offset_x))
     title.set_text(f"Coronagraphic Image (Separation: {sigma_lambda_d:.2f} $\lambda/D$)") 
 
     # Return the updated artists for blitting

@@ -35,6 +35,8 @@ sqrt_contrast = 1e-5 # Planet-to-star contrast (note: sqrt because we are workin
 # Planet offset in units of lambda/D
 planet_offset_x = 15
 planet_offset_y = 0
+planet_offset_x = planet_offset_x/diameter
+planet_offset_y = planet_offset_y/diameter
 wavefront_planet = hp.Wavefront(sqrt_contrast * telescope_pupil * np.exp(2j * np.pi * pupil_grid.x * planet_offset_x) * np.exp(2j * np.pi * pupil_grid.y * planet_offset_y))
 
 # obtain total wavefront intensity at pupil plane
