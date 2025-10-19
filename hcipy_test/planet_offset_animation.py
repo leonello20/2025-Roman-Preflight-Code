@@ -125,7 +125,7 @@ def animate_coronagraph_planet_offset(planet_offset_x):
     # new_title = f"Intensity After Lyot Stop (Separation: {planet_offset_x:.2f} $\lambda/D$)"
     # ax.title.set_text(new_title)
     # ax.set_title("Coronagraphic Image (Separation: {:.2f} $\lambda/D$)".format(planet_offset_x))
-    title.set_text(f"Coronagraphic Image (Separation: {planet_offset_x:.2f} $\lambda/D$)") 
+    title.set_text(r"Coronagraphic Image (Separation: {planet_offset_x:.2f} $\lambda/D$)") 
 
     # Return the updated artists for blitting
     return im_handle,
