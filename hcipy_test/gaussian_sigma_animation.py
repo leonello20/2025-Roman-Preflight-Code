@@ -120,7 +120,7 @@ def animate_coronagraph_gaussian_sigma(sigma_lambda_d):
     im_handle.set_data(reshaped_data)
     
     # Update the title
-    title.set_text(r"Coronagraphic Image ($\sigma_{\lambda/D}$: {sigma_lambda_d:.2f} $\lambda/D$)")
+    title.set_text(r"Coronagraphic Image ($\sigma_{\lambda/D}$: " + f"{sigma_lambda_d:.2f}" + r" $\lambda/D$)")
 
     # Return the updated artists for blitting
     return im_handle,
