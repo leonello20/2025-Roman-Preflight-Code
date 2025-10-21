@@ -197,10 +197,7 @@ I_plot = contrast_slice[center_index:]
 
 fig, ax = plt.subplots(figsize=(10, 6))
 
-ax.plot(x_plot, I_plot, 
-        label=f'Contrast Profile (DM Corrected)', 
-        linewidth=2, 
-        color='#17becf') # Cyan for corrected result
+ax.plot(x_plot, I_plot, label=f'Contrast Profile (DM Corrected)', linewidth=2, color='#17becf') # Cyan for corrected result
 
 # Highlight the planet location
 ax.axvline(x=planet_offset_x, color='r', linestyle='--', alpha=0.6, label=f'Planet at {planet_offset_x:.1f} $\lambda/D$')
@@ -215,5 +212,4 @@ ax.set_title(f"DM-Corrected Contrast Curve ($\sigma = {sigma_lambda_d:.1f} \lamb
 ax.grid(True, which="both", ls="--", alpha=0.5)
 ax.legend()
 plt.tight_layout()
-
 plt.show()
