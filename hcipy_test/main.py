@@ -9,10 +9,10 @@ from contrast_curve import contrast_curve
 # Suppress RuntimeWarnings globally
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-aperture_scale = 2
 grid_size = 256
-pupil_grid = hp.make_pupil_grid(grid_size,aperture_scale)
 diameter = 1.0 # meters
+aperture_scale = 1.5*diameter
+pupil_grid = hp.make_pupil_grid(grid_size,aperture_scale)
 
 telescope_pupil_generator = hp.make_circular_aperture(diameter)
 
