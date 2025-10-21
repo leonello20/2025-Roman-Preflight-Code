@@ -11,7 +11,8 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 grid_size = 256
 diameter = 1.0 # meters
-aperture_scale = 1.5*diameter
+aperture_ratio = 2.0
+aperture_scale = aperture_ratio*diameter
 pupil_grid = hp.make_pupil_grid(grid_size,aperture_scale)
 
 telescope_pupil_generator = hp.make_circular_aperture(diameter)
