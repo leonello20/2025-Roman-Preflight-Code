@@ -10,7 +10,8 @@ from gaussian_occulter import gaussian_occulter_generator
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 # --- ANIMATION PARAMETERS ---
-separation_range = np.linspace(0, 20, 50)
+# Varying planet separation from 2 to 25 lambda/D
+ratio_range = np.linspace(0, 1, 21)
 vmin = -10 # Log contrast minimum for plotting (adjust based on your sqrt_contrast)
 vmax = 0  # Log contrast maximum for plotting
 
@@ -29,12 +30,11 @@ im_handle = hp.imshow_field(
     ax=ax
 )
 plt.colorbar(im_handle, label='Contrast ($\log_{10}(I/I_{total})$)')
-# ax.set_title("Coronagraphic Image (Separation: 0.0 $\lambda/D$)")
 title = ax.set_title("")
 ax.set_xlabel('x / D')
 ax.set_ylabel('y / D')
 
-def animate_coronagraph_planet_offset(planet_offset_x):
+def animate_coronagraph_lyot_stop_ratio(ratio):
     aperture_scale = 1.5
     grid_size = 256
     local_grid_size = 256 # Defined here for use in reshape/normalization
@@ -56,7 +56,7 @@ def animate_coronagraph_planet_offset(planet_offset_x):
     sqrt_contrast = 1e-5 # Planet-to-star contrast (note: sqrt because we are working with the electric field, )
 
     # Planet offset in units of lambda/D
-    # planet_offset_x = 15
+    planet_offset_x = 15
     planet_offset_y = 0
     planet_offset_x = planet_offset_x/diameter
     planet_offset_y = planet_offset_y/diameter
@@ -95,7 +95,7 @@ def animate_coronagraph_planet_offset(planet_offset_x):
     total_intensity_occulter_no_lyot = star_occulter_no_lyot.intensity + planet_occulter_no_lyot.intensity
 
     # create the occulter mask and Lyot Stop in the Lyot Coronagraph
-    ratio = 0.8 # Lyot Stop diameter ratio
+    # ratio = 0.8 # Lyot Stop diameter ratio
     lyot_stop_generator = hp.make_circular_aperture(ratio*diameter) # percentage of the telescope diameter
     lyot_stop_mask = lyot_stop_generator(pupil_grid)
     prop_lyot = hp.LyotCoronagraph(focal_grid,occulter_mask,lyot_stop_mask)
@@ -120,22 +120,18 @@ def animate_coronagraph_planet_offset(planet_offset_x):
     im_handle.set_data(reshaped_data)
     
     # Update the title
-    # ax.set_title(f"Intensity After Lyot Stop (Separation: {planet_offset_x_value:.2f} $\lambda/D$)")
-    # new_title = f"Intensity After Lyot Stop (Separation: {planet_offset_x:.2f} $\lambda/D$)"
-    # ax.title.set_text(new_title)
-    # ax.set_title("Coronagraphic Image (Separation: {:.2f} $\lambda/D$)".format(planet_offset_x))
-    title.set_text(r"Coronagraphic Image (Planet Separation: " + f"{planet_offset_x:.2f}" + r" $\lambda/D$)")
-    
+    title.set_text(r"Coronagraphic Image (Lyot Stop Ratio: " + f"{ratio:.2f}")
+
     # Return the updated artists for blitting
     return im_handle,
 
 # Create the animation over planet_offset_x variable
 ani = FuncAnimation(
     fig,
-    animate_coronagraph_planet_offset,
-    frames=separation_range, # Use the list of separations as frames
-    blit=False,
-    interval=10 # milliseconds between frames
+    animate_coronagraph_lyot_stop_ratio, 
+    frames=ratio_range, # Use the list of separations as frames
+    blit=False, 
+    interval=1000 # milliseconds between frames
 )
 
 plt.show()

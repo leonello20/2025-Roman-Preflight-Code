@@ -34,7 +34,7 @@ prop = hp.FraunhoferPropagator(pupil_grid, focal_grid)
 # obtain wavefront at telescope pupil plane for the star
 wavefront_star = hp.Wavefront(telescope_pupil)
 
-contrast = 1e-10 # Planet-to-star contrast
+contrast = 1e-14 # Planet-to-star contrast
 sqrt_contrast = np.sqrt(contrast) # Planet-to-star contrast (note: sqrt because we are working with the electric field)
 
 # Planet offset in units of lambda/D
@@ -101,7 +101,7 @@ plt.ylabel('y / D')
 plt.show()
 
 # create the occulter mask and Lyot Stop in the Lyot Coronagraph
-ratio = 0.8 # Lyot Stop diameter ratio
+ratio = 0.7 # Lyot Stop diameter ratio
 lyot_stop_generator = hp.make_circular_aperture(ratio*diameter) # percentage of the telescope diameter
 lyot_stop_mask = lyot_stop_generator(pupil_grid)
 prop_lyot = hp.LyotCoronagraph(focal_grid,occulter_mask,lyot_stop_mask)

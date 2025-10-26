@@ -10,7 +10,6 @@ from gaussian_occulter import gaussian_occulter_generator
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 # --- ANIMATION PARAMETERS ---
-# Varying planet separation from 2 to 25 lambda/D
 sigma_range = np.linspace(0, 10, 50)
 vmin = -10 # Log contrast minimum for plotting (adjust based on your sqrt_contrast)
 vmax = 0  # Log contrast maximum for plotting
