@@ -120,7 +120,7 @@ def animate_coronagraph_lyot_stop_ratio(ratio):
     im_handle.set_data(reshaped_data)
     
     # Update the title
-    title.set_text(r"Coronagraphic Image (Lyot Stop Ratio: " + f"{ratio:.2f}")
+    title.set_text(r"Coronagraphic Image (Lyot Stop Ratio: " + f"{ratio:.2f}" + r")")
 
     # Return the updated artists for blitting
     return im_handle,
