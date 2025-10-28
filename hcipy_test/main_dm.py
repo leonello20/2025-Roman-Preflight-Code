@@ -6,27 +6,53 @@ from matplotlib.animation import FuncAnimation
 import warnings
 from gaussian_occulter import gaussian_occulter_generator
 from contrast_curve import contrast_curve
+from setup_aberrated_system import setup_aberrated_system
+from create_combined_aberration_wavefront import create_combined_aberration_wavefront
 # Suppress RuntimeWarnings globally
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
+pupil_diameter = 0.019725 # meters
 grid_size = 1024
-diameter = 1.0 # meters
-aperture_ratio = 2.0
-aperture_scale = aperture_ratio*diameter
-pupil_grid = hp.make_pupil_grid(grid_size,aperture_scale)
+hsm, aper, pupil_grid, wavelength, focal_length = setup_aberrated_system(grid_size, pupil_diameter)
 
-telescope_pupil_generator = hp.make_circular_aperture(diameter)
+# 2. Define planet parameters
+PLANET_CONTRAST = 1e-10 # Star is 1, Planet is 1e-10 dimmer
+PLANET_SEPARATION_X = 10 # lambda/D
+PLANET_SEPARATION_Y = 0 # lambda/D
 
-telescope_pupil = telescope_pupil_generator(pupil_grid)
+# 3. Create the combined wavefront
+wavefront_to_propagate = create_combined_aberration_wavefront(
+    hsm,
+    aper,
+    pupil_diameter,
+    pupil_grid,
+    wavelength,
+    focal_length,
+    planet_contrast=PLANET_CONTRAST,
+    separation_lambda_d_x=PLANET_SEPARATION_X,
+    separaton_lambda_d_y=PLANET_SEPARATION_Y
+)
 
-# plot the pupil
-hp.imshow_field(telescope_pupil, cmap='gray')
-plt.colorbar(label='Amplitude')
-plt.title("Telescope Pupil (Before Lens 1)")
+print("\nCombined aberrated wavefront created and ready for coronagraph propagation.")
+
+# define propagator (pupil to focal)
+focal_grid = hp.make_focal_grid(q=8, num_airy=20)
+prop = hp.FraunhoferPropagator(pupil_grid, focal_grid)
+
+# obtain the wavefront at focal plane for the combined aberrated wavefront
+focal_combined = prop.forward(wavefront_to_propagate)
+
+# plot the focal plane intensity (star + planet) (before occulter, after lens 1)
+hp.imshow_psf((focal_combined.intensity/focal_combined.intensity.max()),normalization='peak')
+plt.colorbar(label='Contrast ($\log_{10}(I/I_{total})$)')
+plt.title("Intensity (Focal Plane, Before Occulter, After Lens 1)")
 plt.xlabel('x / D')
 plt.ylabel('y / D')
 plt.show()
 
+# create the Gaussian occulter mask
+
+"""
 # define propagator (pupil to focal)
 focal_grid = hp.make_focal_grid(q=8, num_airy=20)
 prop = hp.FraunhoferPropagator(pupil_grid, focal_grid)
@@ -34,7 +60,7 @@ prop = hp.FraunhoferPropagator(pupil_grid, focal_grid)
 # obtain wavefront at telescope pupil plane for the star
 wavefront_star = hp.Wavefront(telescope_pupil)
 
-contrast = 1e-12 # Planet-to-star contrast
+contrast = 1e-14 # Planet-to-star contrast
 sqrt_contrast = np.sqrt(contrast) # Planet-to-star contrast (note: sqrt because we are working with the electric field)
 
 # Planet offset in units of lambda/D
@@ -133,3 +159,4 @@ plt.show()
 # call the contrast curve function
 
 contrast_curve(wavefront_star,focal_grid,prop,wavefront_focal_after_occulter_total_intensity,planet_offset_x,sigma_lambda_d)
+"""
