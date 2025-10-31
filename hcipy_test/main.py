@@ -93,7 +93,7 @@ planet_occulter_no_lyot = prop_no_lyot.forward(wavefront_planet)
 total_intensity_occulter_no_lyot = star_occulter_no_lyot.intensity + planet_occulter_no_lyot.intensity
 
 # plot the pupil (Lyot) plane intensity (star + planet) with occulter and no Lyot Stop (pupil (Lyot) plane, after lens 2) (not a log scale)
-hp.imshow_field(total_intensity_occulter_no_lyot/total_intensity_occulter_no_lyot.max())
+hp.imshow_field(np.log(total_intensity_occulter_no_lyot/total_intensity_occulter_no_lyot.max()))
 plt.colorbar(label='Contrast ($I/I_{total}$)')
 plt.title("Pupil (Lyot) Plane Intensity (Occulter, No Lyot Stop) (Lyot Plane, After Lens 2)")
 plt.xlabel('x / D')
