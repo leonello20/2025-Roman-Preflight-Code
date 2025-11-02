@@ -10,7 +10,7 @@ from gaussian_occulter import gaussian_occulter_generator
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 # --- ANIMATION PARAMETERS ---
-sigma_range = np.linspace(0, 10, 50)
+sigma_range = np.linspace(0, 10, 51)
 vmin = -10 # Log contrast minimum for plotting (adjust based on your sqrt_contrast)
 vmax = 0  # Log contrast maximum for plotting
 
