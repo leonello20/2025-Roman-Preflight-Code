@@ -2,7 +2,6 @@ import hcipy as hp
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
-from matplotlib.animation import FuncAnimation
 from matplotlib.animation import FuncAnimation, FFMpegWriter
 import warnings
 from gaussian_occulter import gaussian_occulter_generator
@@ -138,7 +137,6 @@ ani = FuncAnimation(
 )
 
 # --- VIDEO SAVING LOGIC ---
-
 # 'C:/path/to/ffmpeg.exe' placeholder below
 # with the ACTUAL path to your FFmpeg executable file.
 # If you haven't installed FFmpeg, you'll need to do that first.
