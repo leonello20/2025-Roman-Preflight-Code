@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import animation
 from matplotlib.animation import FuncAnimation
+from matplotlib.animation import FuncAnimation, FFMpegWriter
 import warnings
 from gaussian_occulter import gaussian_occulter_generator
 # from animation import animate_coronagraph
@@ -32,6 +33,9 @@ plt.colorbar(im_handle, label='Contrast ($\log_{10}(I/I_{total})$)')
 title = ax.set_title("")
 ax.set_xlabel('x / D')
 ax.set_ylabel('y / D')
+
+fps = 10 # Frames per second for the output video
+filename = 'gaussian_occulter_animation.mp4' # Output filename
 
 def animate_coronagraph_gaussian_sigma(sigma_lambda_d):
     aperture_scale = 1.5
@@ -132,5 +136,30 @@ ani = FuncAnimation(
     blit=False, 
     interval=100 # milliseconds between frames
 )
+
+# --- VIDEO SAVING LOGIC ---
+
+# 'C:/path/to/ffmpeg.exe' placeholder below
+# with the ACTUAL path to your FFmpeg executable file.
+# If you haven't installed FFmpeg, you'll need to do that first.
+ffmpeg_path = 'C:/ffmpeg/bin/ffmpeg.exe'
+
+plt.rcParams['animation.ffmpeg_path'] = ffmpeg_path
+
+try:
+    # Set up the writer, passing the explicit path
+    writer = FFMpegWriter(fps=fps, metadata=dict(artist='HcIPy Simulation'))
+
+    print(f"Starting to save animation to {filename}...")
+    # Save the animation. This will take some time.
+    ani.save(filename, writer=writer)
+    print(f"Animation successfully saved to {filename}")
+
+except FileNotFoundError:
+    print("\n--- ERROR ---")
+    print(f"Failed to find FFmpeg at the specified path: {ffmpeg_path}")
+    print("Please install FFmpeg and update the 'ffmpeg_path' variable in the script with the correct location.")
+except Exception as e:
+    print(f"An error occurred during saving: {e}")
 
 plt.show()
