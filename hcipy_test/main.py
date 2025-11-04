@@ -87,7 +87,7 @@ plt.ylabel('y / D')
 plt.show()
 
 # after lens 2 but before Lyot Stop
-prop_no_lyot = hp.LyotCoronagraph(focal_grid,occulter_mask)
+prop_no_lyot = hp.LyotCoronagraph(pupil_grid,occulter_mask)
 star_occulter_no_lyot = prop_no_lyot.forward(wavefront_star)
 planet_occulter_no_lyot = prop_no_lyot.forward(wavefront_planet)
 total_intensity_occulter_no_lyot = star_occulter_no_lyot.intensity + planet_occulter_no_lyot.intensity
@@ -104,7 +104,7 @@ plt.show()
 ratio = 0.7 # Lyot Stop diameter ratio
 lyot_stop_generator = hp.make_circular_aperture(ratio*diameter) # percentage of the telescope diameter
 lyot_stop_mask = lyot_stop_generator(pupil_grid)
-prop_lyot = hp.LyotCoronagraph(focal_grid,occulter_mask,lyot_stop_mask)
+prop_lyot = hp.LyotCoronagraph(pupil_grid,occulter_mask,lyot_stop_mask)
 star_occulter_lyot = prop_lyot.forward(wavefront_star)
 planet_occulter_lyot = prop_lyot.forward(wavefront_planet)
 total_intensity_occulter_lyot = star_occulter_lyot.intensity + planet_occulter_lyot.intensity

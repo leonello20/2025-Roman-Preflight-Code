@@ -5,6 +5,9 @@ import astropy.units as u
 import hcipy as hp
 from gaussian_occulter import gaussian_occulter_generator
 from contrast_curve import contrast_curve
+import warnings
+# Suppress RuntimeWarnings globally
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 pupil_diameter = 0.019725 # m
 gap_size = 90e-6 # m
@@ -41,6 +44,8 @@ segments = hp.evaluate_supersampled(segments, pupil_grid, 1)
 
 plt.title('HCIPy aperture')
 hp.imshow_field(aper, cmap='gray')
+plt.colorbar()
+plt.show()
 
 # Instantiate the segmented mirror
 hsm = hp.SegmentedDeformableMirror(segments)
@@ -52,11 +57,11 @@ wavefront_star = hp.Wavefront(aper, wavelength=wavelength)
 wavefront_star = hsm(wavefront_star)
 
 # Contrast
-contrast = 1e0
+contrast = 1e-4 # Planet-to-star contrast
 sqrt_contrast = np.sqrt(contrast)
 
 # Planet offset in units of lambda/D
-planet_offset_x = 5
+planet_offset_x = 15
 planet_offset_y = 0
 planet_offset_x = planet_offset_x/pupil_diameter
 planet_offset_y = planet_offset_y/pupil_diameter
@@ -149,8 +154,9 @@ plt.show()
 
 
 # create the Gaussian occulter mask
-sigma_lambda_d = 0.000002
-occulter_mask = gaussian_occulter_generator(focal_grid,sigma_lambda_d)
+sigma_lambda_d = 5
+sigma_meter = sigma_lambda_d*wavelength*focal_length/pupil_diameter
+occulter_mask = gaussian_occulter_generator(focal_grid,sigma_meter)
 occulter_mask = hp.Field(occulter_mask,focal_grid)
 
 # after lens 2 but before Lyot Stop
@@ -165,10 +171,26 @@ plt.xlabel('x / D')
 plt.ylabel('y / D')
 plt.show()
 
+# 2. CRITICAL FIX: Segmented Lyot Stop Definition
+# We re-create the segmented aperture, but slightly undersized to block diffracted light from segment edges/gaps.
+lyot_stop_ratio = 0.7
+lyot_segment_flat_to_flat = segment_flat_to_flat * lyot_stop_ratio
+lyot_gap_size = gap_size * lyot_stop_ratio # Scale the gaps as well
+
+lyot_stop_mask, _ = hp.make_hexagonal_segmented_aperture(
+    num_rings,
+    lyot_segment_flat_to_flat,
+    lyot_gap_size,
+    starting_ring=1,
+    return_segments=True
+)
+# Evaluate the Lyot Stop mask on the pupil grid
+lyot_stop_mask = hp.evaluate_supersampled(lyot_stop_mask, pupil_grid, 1)
+
 # create the occulter mask and Lyot Stop in the Lyot Coronagraph
-ratio = 5 # Lyot Stop diameter ratio
-lyot_stop_generator = hp.make_circular_aperture(ratio*pupil_diameter) # percentage of the telescope diameter
-lyot_stop_mask = lyot_stop_generator(pupil_grid)
+# ratio = 0.8 # Lyot Stop diameter ratio
+# lyot_stop_generator = hp.make_circular_aperture(ratio*pupil_diameter) # percentage of the telescope diameter
+# lyot_stop_mask = lyot_stop_generator(pupil_grid)
 prop_lyot = hp.LyotCoronagraph(focal_grid,occulter_mask,lyot_stop_mask)
 wf_occulter_lyot = prop_lyot.forward(wf_sm)
 
@@ -197,7 +219,102 @@ plt.show()
 
 
 
+"""
 
+# --- STEP 1: DEFINE THE DARK HOLE MASK (DH) ---
+# Define the Dark Hole region in lambda/D
+IWA_ld = 3.0 # Inner Working Angle
+OWA_ld = 20.0 # Outer Working Angle
+y_extent_ld = 20.0 # Vertical extent (+/- 20 lambda/D)
+
+airy_disk_radius_m = wavelength * focal_length / pupil_diameter
+wavel_D_m = airy_disk_radius_m
+
+# Convert lambda/D units to meters on the focal grid
+x_min_m = -OWA_ld * wavel_D_m
+x_max_m = OWA_ld * wavel_D_m
+y_min_m = -y_extent_ld * wavel_D_m
+y_max_m = y_extent_ld * wavel_D_m
+
+# CORRECTED: Use coordinate comparison to define the rectangular bounding box
+dh_mask_rect = (focal_grid.x >= x_min_m) * (focal_grid.x <= x_max_m) * \
+               (focal_grid.y >= y_min_m) * (focal_grid.y <= y_max_m)
+
+# Exclude Inner Working Angle (IWA)
+focal_grid_r = np.sqrt(focal_grid.x**2 + focal_grid.y**2)
+dh_mask_iwa = (focal_grid_r / wavel_D_m > IWA_ld)
+
+# Combine the masks
+dh_mask = dh_mask_rect * dh_mask_iwa
+
+
+# --- PROPAGATE INITIAL WAVEFRONT TO GET INITIAL DH E-FIELD ---
+
+# Propagate initial WF through the coronagraph
+wf_occulter_lyot_initial = prop_lyot.forward(wf)
+wf_focal_initial = prop.forward(wf_occulter_lyot_initial)
+
+# STEP 2: Extract the E-field vector E_DH from the Dark Hole
+E_DH = wf_focal_initial.electric_field[dh_mask]
+
+# print(f"Total number of DM segments: {hsm.num_segments}")
+print(f"DM actuators per segment (Piston, Tip, Tilt): 3")
+print(f"Total number of DM actuators: {hsm.num_actuators}")
+print(f"Number of points in the Dark Hole E-field vector (E_DH): {E_DH.size}")
+
+
+# --- STEP 3: CALCULATE FIRST G-MATRIX COLUMN (Probe Actuator 1: Piston) ---
+
+probe_segment_index = 1 
+probe_piston_m = aber_to_opd(0.1, wavelength) # Small piston poke (0.1 rad, in meters)
+
+# The E-field of the unperturbed star (which includes the speckle-generating aberrations)
+E_unperturbed_star = wf_focal_initial.electric_field[dh_mask]
+
+# Perform the poke on the DM (Segment 1 Piston)
+hsm.set_segment_actuators(probe_segment_index, probe_piston_m, 0, 0)
+
+# Propagate the perturbed WF through the coronagraph
+wf_perturbed = prop_lyot.forward(wf)
+wf_focal_perturbed = prop.forward(wf_perturbed)
+
+# Extract the perturbed E-field vector E_DH
+E_perturbed_star = wf_focal_perturbed.electric_field[dh_mask]
+
+# Calculate the first G-column
+# G_i = (E_perturbed - E_unperturbed) / delta_a_i
+G_column_1 = (E_perturbed_star - E_unperturbed_star) / probe_piston_m
+
+print(f"\n--- G-MATRIX CALCULATION STATUS ---")
+print(f"Calculated G-matrix column for Segment {probe_segment_index} (Piston mode).")
+print(f"Size of G_column_1: {G_column_1.size} (Matches E_DH size)")
+
+
+# --- PLOTTING FINAL DH SETUP FOR VISUALIZATION ---
+plt.figure(figsize=(10, 10))
+# Plot the log contrast of the initial E-field
+log_I_contrast = np.log10(wf_focal_initial.intensity / norm_hc)
+
+# We are using LogNorm now for better visual range mapping
+hp.imshow_field(log_I_contrast, grid=focal_grid, cmap='inferno', vmin=-10, vmax=10)
+plt.colorbar(label=r'Contrast ($\log_{10}(I/I_{star})$)')
+plt.title("Initial Coronagraphic Image with Dark Hole Defined")
+plt.xlabel(r'x ($\lambda/\mathrm{D}$)')
+plt.ylabel(r'y ($\lambda/\mathrm{D}$)')
+
+# Overlay the Dark Hole mask outline
+plt.contour(
+    focal_grid.x.reshape(focal_grid.dims) / wavel_D_m,
+    focal_grid.y.reshape(focal_grid.dims) / wavel_D_m,
+    dh_mask.reshape(focal_grid.dims),
+    levels=[0.5],
+    colors='cyan',
+    linestyles='dashed'
+)
+
+plt.show()
+
+"""
 
 
 """

@@ -55,7 +55,8 @@ def animate_coronagraph_gaussian_sigma(sigma_lambda_d):
     wavefront_star = hp.Wavefront(telescope_pupil)
 
     # obtain wavefront at telescope pupil plane for the planet
-    sqrt_contrast = 1e-5 # Planet-to-star contrast (note: sqrt because we are working with the electric field, )
+    contrast = 1e-10
+    sqrt_contrast = np.sqrt(contrast) # Planet-to-star contrast (note: sqrt because we are working with the electric field, )
 
     # Planet offset in units of lambda/D
     planet_offset_x = 15
@@ -91,16 +92,16 @@ def animate_coronagraph_gaussian_sigma(sigma_lambda_d):
     I_focal_after_occulter = np.abs(E_focal_after_occulter)**2
 
     # after lens 2 but before Lyot Stop
-    prop_no_lyot = hp.LyotCoronagraph(focal_grid,occulter_mask)
+    prop_no_lyot = hp.LyotCoronagraph(pupil_grid,occulter_mask)
     star_occulter_no_lyot = prop_no_lyot.forward(wavefront_star)
     planet_occulter_no_lyot = prop_no_lyot.forward(wavefront_planet)
     total_intensity_occulter_no_lyot = star_occulter_no_lyot.intensity + planet_occulter_no_lyot.intensity
 
     # create the occulter mask and Lyot Stop in the Lyot Coronagraph
-    ratio = 0.8 # Lyot Stop diameter ratio
+    ratio = 0.7 # Lyot Stop diameter ratio
     lyot_stop_generator = hp.make_circular_aperture(ratio*diameter) # percentage of the telescope diameter
     lyot_stop_mask = lyot_stop_generator(pupil_grid)
-    prop_lyot = hp.LyotCoronagraph(focal_grid,occulter_mask,lyot_stop_mask)
+    prop_lyot = hp.LyotCoronagraph(pupil_grid,occulter_mask,lyot_stop_mask)
     star_occulter_lyot = prop_lyot.forward(wavefront_star)
     planet_occulter_lyot = prop_lyot.forward(wavefront_planet)
     total_intensity_occulter_lyot = star_occulter_lyot.intensity + planet_occulter_lyot.intensity
