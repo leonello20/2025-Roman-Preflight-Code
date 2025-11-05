@@ -67,11 +67,19 @@ plt.show()
 # --- STEP 3: APPLY THE DM STATE TO A WAVEFRONT ---
 
 # Create an initial flat wavefront (just the aperture)
+planet_offset_x = 15
+planet_offset_y = 0
+planet_offset_x = planet_offset_x/pupil_diameter
+planet_offset_y = planet_offset_y/pupil_diameter
+contrast = 1e-10 # Planet-to-star contrast
+sqrt_contrast = np.sqrt(contrast) # Planet-to-star contrast (note: sqrt because we are working with the electric field)
+wavefront_planet = hp.Wavefront(sqrt_contrast * aper * np.exp(2j * np.pi * pupil_grid.x * planet_offset_x) * np.exp(2j * np.pi * pupil_grid.y * planet_offset_y))
 wavefront_star = hp.Wavefront(aper, wavelength=wavelength)
+wf_total = hp.Wavefront(wavefront_star.electric_field + wavefront_planet.electric_field, wavelength=wavelength)
 
 # Apply the DM state (hsm) to the wavefront. 
 # This adds the 4.0 rad phase error.
-wf_aberrated = hsm(wavefront_star)
+wf_aberrated = hsm(wf_total)
 
 
 # --- VISUALIZATION OF ABERRATED WAVEFRONT INTENSITY AND PHASE ---
