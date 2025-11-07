@@ -34,7 +34,7 @@ prop = hp.FraunhoferPropagator(pupil_grid, focal_grid)
 # obtain wavefront at telescope pupil plane for the star
 wavefront_star = hp.Wavefront(telescope_pupil)
 
-contrast = 1e-12 # Planet-to-star contrast
+contrast = 1e-14 # Planet-to-star contrast
 sqrt_contrast = np.sqrt(contrast) # Planet-to-star contrast (note: sqrt because we are working with the electric field)
 
 # Planet offset in units of lambda/D
@@ -93,8 +93,8 @@ planet_occulter_no_lyot = prop_no_lyot.forward(wavefront_planet)
 total_intensity_occulter_no_lyot = star_occulter_no_lyot.intensity + planet_occulter_no_lyot.intensity
 
 # plot the pupil (Lyot) plane intensity (star + planet) with occulter and no Lyot Stop (pupil (Lyot) plane, after lens 2) (not a log scale)
-hp.imshow_field(total_intensity_occulter_no_lyot/total_intensity_occulter_no_lyot.max())
-plt.colorbar(label='Contrast ($I/I_{total}$)')
+hp.imshow_field((total_intensity_occulter_no_lyot/total_intensity_occulter_no_lyot.max())**0.1)
+plt.colorbar(label='Contrast ($(I/I_{total})^{1/10}$)')
 plt.title("Pupil (Lyot) Plane Intensity (Occulter, No Lyot Stop) (Lyot Plane, After Lens 2)")
 plt.xlabel('x / D')
 plt.ylabel('y / D')
