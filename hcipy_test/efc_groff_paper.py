@@ -82,7 +82,7 @@ for i in N_segments_array:
     piston = structured_actuators[0, i - 1]
     tip = structured_actuators[1, i - 1]
     tilt = structured_actuators[2, i - 1]
-    hsm.set_segment_actuators(i - 1, i + 0*piston/piston_factor, 0*tip, 0*tilt)
+    hsm.set_segment_actuators(i - 1, piston/piston_factor, tip, tilt)
 
 # HCIPy
 plt.figure(figsize=(8,8))
