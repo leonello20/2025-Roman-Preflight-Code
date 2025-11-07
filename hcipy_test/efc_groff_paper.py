@@ -1,3 +1,4 @@
+"""
 import numpy as np
 import hcipy as hp
 import matplotlib.pyplot as plt
@@ -6,7 +7,7 @@ import matplotlib.pyplot as plt
 N_segments = 36          # Number of segments (36 segments = 108 modes TTP)
 num_modes = 3           # Modes per segment (Piston, Tip, Tilt)
 N_actuators = N_segments * num_modes # Total number of modes/actuators
-pupil_grid_size = 1024    # Resolution of the pupil plane grid
+pupil_grid_size = 256    # Resolution of the pupil plane grid
 wavelength = 632.8e-9    # meters
 pupil_diameter = 0.01975     # meters
 f_number = 30            # Effective f-number for propagation
@@ -75,7 +76,7 @@ hp.imshow_field(aper, cmap='gray')
 plt.colorbar()
 plt.show()
 # set the DM to this initial random shape
-piston_factor = 1000
+piston_factor = 1000 # Scale piston to match tip/tilt units
 N_segments_array = np.arange(1, N_segments + 1) # Segment IDs start at 1
 
 for i in N_segments_array:
@@ -97,9 +98,27 @@ zernike_modes = hp.make_zernike_basis(40, pupil_diameter, pupil_grid)
 aberrations = 50e-9 # 50 nm RMS
 aberration_coefficients = np.random.uniform(-aberrations, aberrations, 40) # 50nm RMS aberration
 aberration_opd = (zernike_modes.linear_combination(aberration_coefficients))
-aberration_opd = aberration_opd * aperture # Mask to the pupil
+aberration_opd = aberration_opd * aperture # Mask aberration to the segmented area
+
+# Calculate intial wavefront E_pup,0 and image E_im,0
+
+wavefront_static = hp.Wavefront(A * np.exp(2j * np.pi * aberration_opd / wavelength), wavelength)   # A*[1+g] term
+# Wavefront after DM: E_pup,0 = E_static * exp(i*phi_DM,0)
+wavefront_pupil_0 = hsm.forward(wavefront_static)
+E_pup_0 = wavefront_pupil_0.electric_field.copy()
+E_im_0 = prop.forward(wavefront_pupil_0).electric_field     # Propagate to image plane (E_im,0 = C{E_pup,0})
+
+# --- 6. Calculate the Initial DM Surface phi_0(u,v) ---
 
 phi_0_opd = hsm.surface # This is H(u,v)
+"""
+
+
+
+
+
+
+
 
 """
 # Calculate the initial total phase field (phi_total = phi_aberration + phi_0)

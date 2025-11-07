@@ -1,0 +1,210 @@
+import hcipy as hp
+import numpy as np
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+from matplotlib.animation import FuncAnimation, FFMpegWriter
+from gaussian_occulter import gaussian_occulter_generator
+import os
+import warnings
+# Suppress RuntimeWarnings globally
+warnings.filterwarnings("ignore", category=RuntimeWarning)
+
+# Input parameters
+pupil_diameter = 7e-3 # m
+wavelength = 700e-9 # m
+focal_length = 500e-3 # m
+
+num_actuators_across = 32
+actuator_spacing = 1.05 / num_actuators_across * pupil_diameter
+aberration_ptv = 0.02 * wavelength # m
+
+epsilon = 1e-9
+DM_STROKE_LIMIT = 5e-7 # meters
+
+spatial_resolution = focal_length * wavelength / pupil_diameter
+iwa = 6 * spatial_resolution
+owa = 12 * spatial_resolution
+offset = 1 * spatial_resolution
+
+efc_loop_gain = 0.7
+
+# Create grids
+pupil_grid = hp.make_pupil_grid(128, pupil_diameter * 1.2)
+focal_grid = hp.make_focal_grid(2, 16, spatial_resolution=spatial_resolution)
+prop = hp.FraunhoferPropagator(pupil_grid, focal_grid, focal_length)
+
+# Create aperture and dark zone
+aperture = hp.Field(np.exp(-(pupil_grid.as_('polar').r / (0.5 * pupil_diameter))**30), pupil_grid)
+
+dark_zone = hp.make_circular_aperture(2 * owa)(focal_grid)
+dark_zone -= hp.make_circular_aperture(2 * iwa)(focal_grid)
+dark_zone *= focal_grid.x > offset
+dark_zone = dark_zone.astype(bool)
+
+# Create optical elements
+sigma_lambda_d = 4
+occulter_mask = gaussian_occulter_generator(focal_grid,sigma_lambda_d)
+occulter_mask = hp.Field(occulter_mask,focal_grid)
+
+# create the occulter mask and Lyot Stop in the Lyot Coronagraph
+ratio = 0.7 # Lyot Stop diameter ratio
+lyot_stop_generator = hp.make_circular_aperture(ratio*pupil_diameter) # percentage of the telescope diameter
+lyot_stop_mask = lyot_stop_generator(pupil_grid)
+coronagraph = hp.LyotCoronagraph(pupil_grid,occulter_mask,lyot_stop_mask)
+
+tip_tilt = hp.make_zernike_basis(3, pupil_diameter, pupil_grid, starting_mode=2)
+aberration = hp.SurfaceAberration(pupil_grid, aberration_ptv, pupil_diameter, remove_modes=tip_tilt, exponent=-3)
+
+# This uses the 32x32 continuous DM model, matching your goal
+influence_functions = hp.make_xinetics_influence_functions(pupil_grid, num_actuators_across, actuator_spacing)
+deformable_mirror = hp.DeformableMirror(influence_functions)
+
+def get_image(actuators=None, include_aberration=True):
+    if actuators is not None:
+        deformable_mirror.actuators = actuators
+
+    wf = hp.Wavefront(aperture, wavelength)
+    if include_aberration:
+        wf = aberration(wf)
+
+    img = prop(coronagraph(deformable_mirror(wf)))
+
+    return img
+
+img_ref = prop(hp.Wavefront(aperture, wavelength)).intensity
+
+def get_jacobian_matrix(get_image, dark_zone, num_modes):
+    responses = []
+    amps = np.linspace(-epsilon, epsilon, 2)
+
+    for i, mode in enumerate(np.eye(num_modes)):
+        response = 0
+
+        for amp in amps:
+            response += amp * get_image(mode * amp, include_aberration=False).electric_field
+
+        response /= np.var(amps)
+        response = response[dark_zone]
+
+        responses.append(np.concatenate((response.real, response.imag)))
+
+    jacobian = np.array(responses).T
+    return jacobian
+
+jacobian = get_jacobian_matrix(get_image, dark_zone, len(influence_functions))
+rcond = 0.007
+
+def run_efc(get_image, dark_zone, num_modes, jacobian, rcond):
+    # Calculate EFC matrix
+    efc_matrix = hp.inverse_tikhonov(jacobian, rcond)
+
+    # Run EFC loop
+    current_actuators = np.zeros(num_modes)
+
+    actuators = []
+    electric_fields = []
+    images = []
+
+    # Keeping iterations low for stability
+    NUM_ITERATIONS = 20
+    
+    for i in range(NUM_ITERATIONS):
+        img = get_image(current_actuators)
+
+        electric_field = img.electric_field
+        image = img.intensity
+
+        actuators.append(current_actuators.copy())
+        electric_fields.append(electric_field)
+        images.append(image)
+
+        x = np.concatenate((electric_field[dark_zone].real, electric_field[dark_zone].imag))
+        y = efc_matrix.dot(x)
+
+        current_actuators -= efc_loop_gain * y
+        
+        # ENFORCE LIMIT: Uses the DM_STROKE_LIMIT variable
+        current_actuators = np.clip(current_actuators, -DM_STROKE_LIMIT, DM_STROKE_LIMIT)
+
+    return actuators, electric_fields, images, NUM_ITERATIONS
+
+# Get the results and the actual number of iterations used
+actuators, electric_fields, images, num_iterations = run_efc(get_image, dark_zone, len(influence_functions), jacobian, rcond)
+
+
+# --- Animation Rendering Block ---
+
+plt.rcParams['animation.ffmpeg_path'] = r'C:\ffmpeg\bin\ffmpeg.exe'
+# Use a figure size and dpi that is friendly to memory 
+fig = plt.figure(figsize=(9, 7)) 
+
+anim = FFMpegWriter(fps=5, metadata=dict(artist='HCIPy EFC Loop'))
+
+average_contrast = [np.mean(image[dark_zone] / img_ref.max()) for image in images]
+
+electric_field_norm = mpl.colors.LogNorm(10**-5, 10**(-2.0), True)
+
+iteration_range = np.linspace(0, num_iterations-1, num_iterations, dtype=int)
+
+def make_animation_1dm(iteration):
+    # Clear the entire figure before drawing new subplots
+    fig.clf() 
+    
+    # Re-establish subplot layout
+    
+    # 1. Electric Field
+    ax1 = fig.add_subplot(2, 2, 1)
+    ax1.set_title('Electric field')
+    electric_field = electric_fields[iteration] / np.sqrt(img_ref.max())
+    hp.imshow_field(electric_field, norm=electric_field_norm, grid_units=spatial_resolution, ax=ax1)
+    hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white', ax=ax1)
+
+    # 2. Intensity Image
+    ax2 = fig.add_subplot(2, 2, 2)
+    ax2.set_title('Intensity image')
+    log_intensity = np.log10(images[iteration] / img_ref.max())
+    img = hp.imshow_field(log_intensity, grid_units=spatial_resolution, cmap='inferno', vmin=-10, vmax=-5, ax=ax2)
+    plt.colorbar(img, ax=ax2)
+    hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white', ax=ax2)
+
+    # 3. DM Surface
+    ax3 = fig.add_subplot(2, 2, 3)
+    deformable_mirror.actuators = actuators[iteration]
+    ax3.set_title('DM surface in nm')
+    dm_img = hp.imshow_field(deformable_mirror.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5, ax=ax3)
+    plt.colorbar(dm_img, ax=ax3)
+
+    # 4. Average Contrast
+    ax4 = fig.add_subplot(2, 2, 4)
+    ax4.set_title('Average contrast')
+    ax4.plot(range(iteration + 1), average_contrast[:iteration + 1], 'o-')
+    ax4.set_xlim(0, num_iterations)
+    ax4.set_yscale('log')
+    ax4.set_ylim(1e-11, 1e-5)
+    ax4.grid(color='0.5')
+    
+    # Supertitle
+    fig.suptitle('Iteration %d / %d' % (iteration + 1, num_iterations), fontsize='x-large')
+    
+    # Adjust layout to prevent overlap
+    fig.tight_layout()
+
+filename = 'efc_loop_animation_new.mp4' # Output filename
+print("Setting up animation writer...")
+anim.setup(fig, filename, dpi=72) 
+
+print("Starting animation rendering...")
+
+# 2. Manual Loop for grabbing frames
+for i in iteration_range:
+    if (i+1) % 5 == 0 or i == 0:
+        print(f"Rendering frame {i+1} / {num_iterations}")
+    make_animation_1dm(i) 
+    anim.grab_frame() # Grab frame inside the loop after drawing
+
+# Finalize the video file
+anim.finish()
+print(f"Animation '{filename}' saved successfully after {num_iterations} frames.")
+
+# NOTE: We keep plt.close(fig) commented out to avoid potential issues in some environments.
+# plt.close(fig)
