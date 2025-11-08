@@ -70,6 +70,7 @@ def get_image(actuators=None, include_aberration=True):
     wf_planet = hp.Wavefront(np.sqrt(planet_star_contrast)*aperture*np.exp(2j*np.pi*pupil_grid.x*planet_star_separation), wavelength)
     wf_electric_field = wf_star.electric_field + wf_planet.electric_field
     wf = hp.Wavefront(wf_electric_field, wavelength)
+    wf = hp.Wavefront(aperture, wavelength)
     if include_aberration:
         wf = aberration(wf)
 
@@ -214,6 +215,32 @@ for i in iteration_range:
 # Finalize the video file
 anim.finish()
 print(f"Animation '{filename}' saved successfully after {num_iterations} frames.")
+plt.close(fig)
 
-# NOTE: We keep plt.close(fig) commented out to avoid potential issues in some environments.
-# plt.close(fig)
+# Add the planet wavefront to the final image
+
+final_iteration = num_iterations - 1
+planet_star_contrast = 1e-8
+planet_star_separation = 10
+planet_star_separation = planet_star_separation/pupil_diameter  # lambda/D units
+wf_planet = hp.Wavefront(np.sqrt(planet_star_contrast)*aperture*np.exp(2j*np.pi*pupil_grid.x*planet_star_separation), wavelength)
+wf_img_planet = prop(coronagraph(wf_planet))
+electric_field = electric_fields[final_iteration] + wf_img_planet.electric_field
+wf_total = hp.Wavefront(electric_field, wavelength)
+
+# Intensity Image
+plt.figure(figsize=(8, 8))
+plt.title('Intensity image for last iteration with planet')
+log_intensity = np.log10((wf_total.intensity) / img_ref.max())
+hp.imshow_field(log_intensity, grid_units=spatial_resolution, cmap='inferno', vmin=-10, vmax=-5)
+plt.colorbar(label='Contrast ($\log_{10}(I/I_{total})$)')
+hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white')
+plt.show()
+
+# Subtract the image without the planet from the image with the planet to see the planet alone
+plt.figure(figsize=(8, 8))
+plt.title('Planet signal alone after subtraction')
+log_intensity_planet_only = np.log10((wf_total.intensity - images[final_iteration]) / img_ref.max())
+hp.imshow_field(log_intensity_planet_only, grid_units=spatial_resolution, cmap='inferno')
+plt.colorbar(label='Contrast ($\log_{10}(I/I_{total})$)')
+plt.show()
