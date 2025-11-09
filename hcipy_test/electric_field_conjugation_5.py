@@ -146,6 +146,7 @@ def run_efc(get_image, dark_zone, num_modes, jacobian, rcond):
 
 actuators, electric_fields, images = run_efc(get_image, dark_zone, num_modes, jacobian, rcond_tikhonov)
 
+
 # --- ANIMATION SETUP ---
 plt.rcParams['animation.ffmpeg_path'] = r'C:\ffmpeg\bin\ffmpeg.exe' # <<-- Check this path!
 
@@ -174,7 +175,6 @@ def make_animation_sm_efc(iteration):
     plt.subplot(2, 2, 2)
     plt.title('Intensity image (Log Contrast)')
     hp.imshow_field(np.log10(images[iteration] / img_ref), grid_units=spatial_resolution, cmap='inferno', vmin=-4, vmax=8)
-    print(np.max(images[iteration] / img_ref))
     plt.colorbar()
     hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white')
 

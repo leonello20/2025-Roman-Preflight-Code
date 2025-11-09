@@ -58,7 +58,7 @@ focal_total_intensity = focal_star.intensity + focal_planet.intensity
 
 # plot the focal plane intensity (star + planet) (before occulter, after lens 1)
 hp.imshow_field(np.log10(focal_total_intensity/focal_total_intensity.max()))
-plt.colorbar(label='Contrast ($\log_{10}(I/I_{total})$)')
+plt.colorbar(label='Contrast ($log_{10}(I/I_{total})$)')
 plt.title("Intensity (Focal Plane, Before Occulter, After Lens 1)")
 plt.xlabel('x / D')
 plt.ylabel('y / D')
@@ -111,7 +111,7 @@ total_intensity_occulter_lyot = star_occulter_lyot.intensity + planet_occulter_l
 
 # plot the focal plane intensity (star + planet) with occulter and Lyot Stop (Lyot (pupil) plane, after lens 2)
 hp.imshow_field(np.log10(total_intensity_occulter_lyot/total_intensity_occulter_lyot.max()))
-plt.colorbar(label='Contrast ($\log_{10}(I/I_{toal})$)')
+plt.colorbar(label='Contrast ($log_{10}(I/I_{toal})$)')
 plt.title("Final Coronagraphic Image (Occulter + Lyot Stop) (Lyot Plane, After Lens 2)")
 plt.xlabel('x / D')
 plt.ylabel('y / D')
@@ -124,7 +124,7 @@ wavefront_focal_after_occulter_total_intensity = wavefront_focal_after_occulter_
 
 # plot the focal plane intensity (star + planet) after Lyot Stop
 hp.imshow_field(np.log10(wavefront_focal_after_occulter_total_intensity/wavefront_focal_after_occulter_total_intensity.max()))
-plt.colorbar(label='Contrast ($\log_{10}(I/I_{total})$)')
+plt.colorbar(label='Contrast ($log_{10}(I/I_{total})$)')
 plt.title("Intensity After Lyot Stop (Focal Plane, After Lens 3)")
 plt.xlabel('x / D')
 plt.ylabel('y / D')

@@ -41,14 +41,14 @@ def contrast_curve(wavefront_star,focal_grid,prop,wavefront_focal_after_occulter
     ax.plot(x_plot, I_plot,label=f'Contrast Profile',linewidth=2,color="#54297d")
 
     # Highlight the planet location
-    ax.axvline(x=planet_offset_x, color='r', linestyle='--', alpha=0.6, label=f'Planet at {planet_offset_x:.1f} $\lambda/D$')
+    ax.axvline(x=planet_offset_x, color='r', linestyle='--', alpha=0.6, label=f'Planet at {planet_offset_x:.1f} $\\lambda/D$')
 
     # Styling
     ax.set_ylim(-16, -8) # Set limits for typical coronagraph contrast
     ax.set_xlim(x_plot.min(), x_plot.max())
-    ax.set_xlabel('Angular Separation ($x / \lambda D$)', fontsize=14)
-    ax.set_ylabel('Log Contrast ($\log_{10}(I / I_{star,peak})$)', fontsize=14)
-    ax.set_title(f"Coronagraph Contrast Curve ($\sigma = {sigma_lambda_d:.1f} \lambda/D$)", fontsize=16)
+    ax.set_xlabel('Angular Separation ($x / \\lambda D$)', fontsize=14)
+    ax.set_ylabel('Log Contrast ($log_{10}(I / I_{star,peak})$)', fontsize=14)
+    ax.set_title(f"Coronagraph Contrast Curve ($\\sigma = {sigma_lambda_d:.1f} \\lambda/D$)", fontsize=16)
     ax.grid(True, which="both", ls="--", alpha=0.5)
     ax.legend()
     plt.tight_layout()
