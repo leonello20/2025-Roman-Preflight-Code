@@ -225,20 +225,42 @@ plt.colorbar(label='Contrast ($log_{10}(I/I_{total})$)')
 hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white')
 plt.show()
 
-"""
-planet_star_contrast = 1e-30
-planet_star_separation = 10
-planet_star_separation = planet_star_separation/pupil_diameter  # lambda/D units
-wf_planet = hp.Wavefront(np.sqrt(planet_star_contrast)*aperture*np.exp(2j*np.pi*pupil_grid.x*planet_star_separation), wavelength)
-wf_img_planet = prop(coronagraph(wf_planet))
-electric_field = electric_fields[final_iteration] + wf_img_planet.electric_field
-wf_total = hp.Wavefront(electric_field, wavelength)
 
-# Subtract the image without the planet from the image with the planet to see the planet alone
-plt.figure(figsize=(8, 8))
-plt.title('Planet signal alone after subtraction')
-log_intensity_planet_only = np.log10((wf_total.intensity - images[final_iteration]) / img_ref.max())
-hp.imshow_field(log_intensity_planet_only, grid_units=spatial_resolution, cmap='inferno')
+
+
+
+# Plot the last iteration
+
+# 1. Electric Field
+plt.figure(figsize=(10, 10))
+plt.subplot(2, 2, 1)
+plt.title('Electric field for last iteration')
+electric_field = electric_fields[final_iteration] / np.sqrt(img_ref.max())
+hp.imshow_field(electric_field, norm=electric_field_norm, grid_units=spatial_resolution)
+hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white')
+
+# 2. Intensity Image
+plt.subplot(2, 2, 2)
+plt.title('Intensity image for last iteration')
+log_intensity = np.log10(images[final_iteration] / img_ref.max())
+hp.imshow_field(log_intensity, grid_units=spatial_resolution, cmap='inferno', vmin=-10, vmax=-5)
 plt.colorbar(label='Contrast ($log_{10}(I/I_{total})$)')
+hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white')
+
+# 3. DM Surface
+plt.subplot(2, 2, 3)
+plt.title('DM surface in nm for last iteration')
+deformable_mirror.actuators = actuators[final_iteration]
+hp.imshow_field(deformable_mirror.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5)
+plt.colorbar(label='DM Surface (nm)')
+
+# 4. Average Contrast
+plt.subplot(2, 2, 4)
+plt.title('Average contrast')
+plt.plot(range(num_iterations), average_contrast, 'o-')
+plt.xlim(0, num_iterations)
+plt.yscale('log')
+plt.ylim(1e-11, 1e-5)
+plt.grid(color='0.5')
+plt.suptitle('Final Results after %d Iterations' % num_iterations, fontsize='x-large')
 plt.show()
-"""
