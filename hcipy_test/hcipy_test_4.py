@@ -42,7 +42,9 @@ aper, segments = hp.make_hexagonal_segmented_aperture(num_rings,
 aper = hp.evaluate_supersampled(aper, pupil_grid, 1)
 segments = hp.evaluate_supersampled(segments, pupil_grid, 1)
 
-plt.title('HCIPy aperture')
+plt.title('HSM Aperture')
+plt.xlabel('x (m)')
+plt.ylabel('y (m)')
 hp.imshow_field(aper, cmap='gray')
 plt.colorbar()
 plt.show()

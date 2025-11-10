@@ -40,7 +40,7 @@ dark_zone = dark_zone.astype(bool)
 
 sigma_lambda_d = 5
 occulter_mask = gaussian_occulter_generator(focal_grid,sigma_lambda_d)
-ratio = 0.8
+ratio = 0.7
 lyot_stop_generator = hp.make_circular_aperture(ratio*pupil_diameter) # percentage of the telescope diameter
 lyot_stop_mask = lyot_stop_generator(pupil_grid)
 Lyot_Coronagraph = hp.LyotCoronagraph(focal_grid,occulter_mask,lyot_stop_mask)
