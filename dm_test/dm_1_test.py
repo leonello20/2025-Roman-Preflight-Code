@@ -217,13 +217,13 @@ plt.close(fig)
 
 final_iteration = num_iterations - 1
 
-plt.figure(figsize=(8, 8))
-plt.title('Intensity image for last iteration')
-log_intensity = np.log10((images[final_iteration]) / img_ref.max())
-hp.imshow_field(log_intensity, grid_units=spatial_resolution, cmap='inferno', vmin=-10, vmax=-5)
-plt.colorbar(label='Contrast ($log_{10}(I/I_{total})$)')
-hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white')
-plt.show()
+# plt.figure(figsize=(8, 8))
+# plt.title('Intensity image for last iteration')
+# log_intensity = np.log10((images[final_iteration]) / img_ref.max())
+# hp.imshow_field(log_intensity, grid_units=spatial_resolution, cmap='inferno', vmin=-10, vmax=-5)
+# plt.colorbar(label='Contrast ($log_{10}(I/I_{total})$)')
+# hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white')
+# plt.show()
 
 
 
@@ -232,15 +232,15 @@ plt.show()
 # Plot the last iteration
 
 # 1. Electric Field
-plt.figure(figsize=(10, 10))
-plt.subplot(2, 2, 1)
-plt.title('Electric field for last iteration')
-electric_field = electric_fields[final_iteration] / np.sqrt(img_ref.max())
-hp.imshow_field(electric_field, norm=electric_field_norm, grid_units=spatial_resolution)
-hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white')
+# plt.figure(figsize=(10, 10))
+# plt.subplot(2, 2, 1)
+# plt.title('Electric field for last iteration')
+# electric_field = electric_fields[final_iteration] / np.sqrt(img_ref.max())
+# hp.imshow_field(electric_field, norm=electric_field_norm, grid_units=spatial_resolution)
+# hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white')
 
 # 2. Intensity Image
-plt.subplot(2, 2, 2)
+plt.subplot(1, 3, 1)
 plt.title('Intensity image for last iteration')
 log_intensity = np.log10(images[final_iteration] / img_ref.max())
 hp.imshow_field(log_intensity, grid_units=spatial_resolution, cmap='inferno', vmin=-10, vmax=-5)
@@ -248,14 +248,14 @@ plt.colorbar(label='Contrast ($log_{10}(I/I_{total})$)')
 hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white')
 
 # 3. DM Surface
-plt.subplot(2, 2, 3)
+plt.subplot(1, 3, 2)
 plt.title('DM surface in nm for last iteration')
 deformable_mirror.actuators = actuators[final_iteration]
 hp.imshow_field(deformable_mirror.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5)
 plt.colorbar(label='DM Surface (nm)')
 
 # 4. Average Contrast
-plt.subplot(2, 2, 4)
+plt.subplot(1, 3, 3)
 plt.title('Average contrast')
 plt.plot(range(num_iterations), average_contrast, 'o-')
 plt.xlim(0, num_iterations)
