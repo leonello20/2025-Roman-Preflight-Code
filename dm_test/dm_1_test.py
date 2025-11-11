@@ -10,7 +10,7 @@ import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 # Input parameters
-pupil_diameter = 7e-3 # m
+pupil_diameter = 1 # m
 wavelength = 700e-9 # m
 focal_length = 500e-3 # m
 
@@ -46,7 +46,7 @@ dark_zone *= focal_grid.x > offset
 dark_zone = dark_zone.astype(bool)
 
 # Create optical elements
-sigma_lambda_d = 4
+sigma_lambda_d = 5
 occulter_mask = gaussian_occulter_generator(focal_grid,sigma_lambda_d)
 occulter_mask = hp.Field(occulter_mask,focal_grid)
 
