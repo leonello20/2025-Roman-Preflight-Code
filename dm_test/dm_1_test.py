@@ -237,6 +237,7 @@ final_iteration = num_iterations - 1
 # hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white')
 
 # Intensity Image
+plt.figure(figsize=(16, 6))
 plt.subplot(1, 2, 1)
 plt.title('Intensity image for last iteration')
 plt.xlabel('x/D')

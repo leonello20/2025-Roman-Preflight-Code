@@ -98,7 +98,7 @@ def get_jacobian_matrix(get_image, dark_zone, num_modes):
     return jacobian
 
 jacobian = get_jacobian_matrix(get_image, dark_zone, 2 * len(influence_functions))
-rcond = 0.02
+rcond = 0.025
 
 def run_efc(get_image, dark_zone, num_modes, jacobian, rcond):
     # Calculate EFC matrix
@@ -112,7 +112,7 @@ def run_efc(get_image, dark_zone, num_modes, jacobian, rcond):
     images = []
 
     # Keeping iterations low for stability
-    NUM_ITERATIONS = 500
+    NUM_ITERATIONS = 1000
     
     for i in range(NUM_ITERATIONS):
         img = get_image(current_actuators)
@@ -164,16 +164,16 @@ def make_animation_1dm(iteration):
     # Re-establish subplot layout
     
     # 1. Electric Field
-    ax1 = fig.add_subplot(2, 2, 1)
-    ax1.set_title('Focal Plane Electric Field')
-    ax1.set_xlabel('x/D')
-    ax1.set_ylabel('y/D')
-    electric_field = electric_fields[iteration] / np.sqrt(img_ref.max())
-    hp.imshow_field(electric_field, norm=electric_field_norm, grid_units=spatial_resolution, ax=ax1)
-    hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white', ax=ax1)
+    # ax1 = fig.add_subplot(2, 2, 1)
+    # ax1.set_title('Focal Plane Electric Field')
+    # ax1.set_xlabel('x/D')
+    # ax1.set_ylabel('y/D')
+    # electric_field = electric_fields[iteration] / np.sqrt(img_ref.max())
+    # hp.imshow_field(electric_field, norm=electric_field_norm, grid_units=spatial_resolution, ax=ax1)
+    # hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white', ax=ax1)
 
     # 2. Intensity Image
-    ax2 = fig.add_subplot(2, 2, 2)
+    ax2 = fig.add_subplot(2, 2, 1)
     ax2.set_title('Focal Plane Intensity Image')
     ax2.set_xlabel('x/D')
     ax2.set_ylabel('y/D')
@@ -182,24 +182,8 @@ def make_animation_1dm(iteration):
     plt.colorbar(img, ax=ax2)
     hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white', ax=ax2)
 
-    # 3. DM1 Surface
-    ax3 = fig.add_subplot(2, 3, 4)
-    ax3.set_title('DM1 surface')
-    ax3.set_xlabel('x (m)')
-    ax3.set_ylabel('y (m)')
-    dm_img = hp.imshow_field(deformable_mirror_1.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5, ax=ax3)
-    plt.colorbar(dm_img, ax=ax3, label='DM1 Surface (nm)')
-
-    # 4. DM2 Surface
-    ax4 = fig.add_subplot(2, 3, 5)
-    ax4.set_title('DM2 surface')
-    ax4.set_xlabel('x (m)')
-    ax4.set_ylabel('y (m)')
-    dm_img = hp.imshow_field(deformable_mirror_2.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5, ax=ax4)
-    plt.colorbar(dm_img, ax=ax4, label='DM2 Surface (nm)')
-
     # 5. Average Contrast
-    ax5 = fig.add_subplot(2, 3, 6)
+    ax5 = fig.add_subplot(2, 2, 2)
     ax5.set_title('Average contrast')
     ax5.set_xlabel('Iteration')
     ax5.set_ylabel('Average Contrast ($log_{10}(I/I_{total})$)')
@@ -208,6 +192,22 @@ def make_animation_1dm(iteration):
     ax5.set_yscale('log')
     ax5.set_ylim(1e-11, 1e-5)
     ax5.grid(color='0.5')
+
+    # 3. DM1 Surface
+    ax3 = fig.add_subplot(2, 2, 3)
+    ax3.set_title('DM1 surface')
+    ax3.set_xlabel('x (m)')
+    ax3.set_ylabel('y (m)')
+    dm_img = hp.imshow_field(deformable_mirror_1.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5, ax=ax3)
+    plt.colorbar(dm_img, ax=ax3, label='DM1 Surface (nm)')
+
+    # 4. DM2 Surface
+    ax4 = fig.add_subplot(2, 2, 4)
+    ax4.set_title('DM2 surface')
+    ax4.set_xlabel('x (m)')
+    ax4.set_ylabel('y (m)')
+    dm_img = hp.imshow_field(deformable_mirror_2.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5, ax=ax4)
+    plt.colorbar(dm_img, ax=ax4, label='DM2 Surface (nm)')
 
     # Supertitle
     fig.suptitle('Iteration %d / %d' % (iteration + 1, num_iterations), fontsize='x-large')
@@ -247,7 +247,7 @@ final_iteration = num_iterations - 1
 # hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white')
 
 # Intensity Image
-plt.figure(figsize=(12, 6))
+plt.figure(figsize=(16, 6))
 plt.subplot(1, 2, 1)
 plt.title('Intensity image for last iteration')
 plt.xlabel('x/D')
