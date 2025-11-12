@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation, FFMpegWriter
+from fig2img import fig2img
 from gaussian_occulter import gaussian_occulter_generator
 import os
 import warnings
@@ -97,7 +98,7 @@ def get_jacobian_matrix(get_image, dark_zone, num_modes):
     return jacobian
 
 jacobian = get_jacobian_matrix(get_image, dark_zone, 2 * len(influence_functions))
-rcond = 0.01
+rcond = 0.02
 
 def run_efc(get_image, dark_zone, num_modes, jacobian, rcond):
     # Calculate EFC matrix
@@ -158,20 +159,24 @@ def make_animation_1dm(iteration):
     deformable_mirror_1.actuators = actuators[iteration][:len(influence_functions)]
     deformable_mirror_2.actuators = actuators[iteration][len(influence_functions):]
     # Clear the entire figure before drawing new subplots
-    fig.clf() 
+    fig.clf()
     
     # Re-establish subplot layout
     
     # 1. Electric Field
     ax1 = fig.add_subplot(2, 2, 1)
-    ax1.set_title('Electric field')
+    ax1.set_title('Focal Plane Electric Field')
+    ax1.set_xlabel('x/D')
+    ax1.set_ylabel('y/D')
     electric_field = electric_fields[iteration] / np.sqrt(img_ref.max())
     hp.imshow_field(electric_field, norm=electric_field_norm, grid_units=spatial_resolution, ax=ax1)
     hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white', ax=ax1)
 
     # 2. Intensity Image
     ax2 = fig.add_subplot(2, 2, 2)
-    ax2.set_title('Intensity image')
+    ax2.set_title('Focal Plane Intensity Image')
+    ax2.set_xlabel('x/D')
+    ax2.set_ylabel('y/D')
     log_intensity = np.log10(images[iteration] / img_ref.max())
     img = hp.imshow_field(log_intensity, grid_units=spatial_resolution, cmap='inferno', vmin=-10, vmax=-5, ax=ax2)
     plt.colorbar(img, ax=ax2)
@@ -179,19 +184,25 @@ def make_animation_1dm(iteration):
 
     # 3. DM1 Surface
     ax3 = fig.add_subplot(2, 3, 4)
-    ax3.set_title('DM1 surface in nm')
+    ax3.set_title('DM1 surface')
+    ax3.set_xlabel('x (m)')
+    ax3.set_ylabel('y (m)')
     dm_img = hp.imshow_field(deformable_mirror_1.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5, ax=ax3)
-    plt.colorbar(dm_img, ax=ax3)
+    plt.colorbar(dm_img, ax=ax3, label='DM1 Surface (nm)')
 
     # 4. DM2 Surface
     ax4 = fig.add_subplot(2, 3, 5)
-    ax4.set_title('DM2 surface in nm')
+    ax4.set_title('DM2 surface')
+    ax4.set_xlabel('x (m)')
+    ax4.set_ylabel('y (m)')
     dm_img = hp.imshow_field(deformable_mirror_2.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5, ax=ax4)
-    plt.colorbar(dm_img, ax=ax4)
+    plt.colorbar(dm_img, ax=ax4, label='DM2 Surface (nm)')
 
     # 5. Average Contrast
     ax5 = fig.add_subplot(2, 3, 6)
     ax5.set_title('Average contrast')
+    ax5.set_xlabel('Iteration')
+    ax5.set_ylabel('Average Contrast ($log_{10}(I/I_{total})$)')
     ax5.plot(range(iteration + 1), average_contrast[:iteration + 1], 'o-')
     ax5.set_xlim(0, num_iterations)
     ax5.set_yscale('log')
@@ -200,7 +211,6 @@ def make_animation_1dm(iteration):
 
     # Supertitle
     fig.suptitle('Iteration %d / %d' % (iteration + 1, num_iterations), fontsize='x-large')
-    
     # Adjust layout to prevent overlap
     fig.tight_layout()
 
@@ -237,8 +247,11 @@ final_iteration = num_iterations - 1
 # hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white')
 
 # Intensity Image
+plt.figure(figsize=(12, 6))
 plt.subplot(1, 2, 1)
 plt.title('Intensity image for last iteration')
+plt.xlabel('x/D')
+plt.ylabel('y/D')
 log_intensity = np.log10(images[final_iteration] / img_ref.max())
 hp.imshow_field(log_intensity, grid_units=spatial_resolution, cmap='inferno', vmin=-10, vmax=-5)
 plt.colorbar(label='Contrast ($log_{10}(I/I_{total})$)')
@@ -246,24 +259,46 @@ hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors=
 
 # Average Contrast
 plt.subplot(1, 2, 2)
-plt.title('Average contrast')
+plt.title('Average Dark Zone Contrast')
+plt.xlabel('Iteration')
+plt.ylabel('Average Contrast ($log_{10}(I/I_{total})$)')
 plt.plot(range(num_iterations), average_contrast, 'o-')
 plt.xlim(0, num_iterations)
 plt.yscale('log')
 plt.ylim(1e-11, 1e-5)
 plt.grid(color='0.5')
 plt.suptitle('Final Results after %d Iterations' % num_iterations, fontsize='x-large')
+
+fig_intensity = plt.gcf()
+img_intensity = fig2img(fig_intensity)
+img_intensity.save('C:/Users/leone/OneDrive/Documents/GitHub/2025-Roman-Preflight-Code/Images/dm_1_dm_2_final_intensity.png')
 plt.show()
 
 # DM 1 Surface
-plt.figure(figsize=(8, 8))
-plt.title('DM surface (nm) for last iteration')
+plt.figure(figsize=(12, 6))
+plt.subplot(1, 2, 1)
+plt.title('DM1 surface for last iteration')
+plt.xlabel('x (m)')
+plt.ylabel('y (m)')
 deformable_mirror_1.actuators = actuators[final_iteration][:len(influence_functions)]
 hp.imshow_field(deformable_mirror_1.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5)
-plt.colorbar(label='DM Surface (nm)')
+plt.colorbar(label='DM1 Surface (nm)')
+
+# DM 2 Surface
+plt.subplot(1, 2, 2)
+plt.title('DM2 surface for last iteration')
+plt.xlabel('x (m)')
+plt.ylabel('y (m)')
+deformable_mirror_2.actuators = actuators[final_iteration][len(influence_functions):]
+hp.imshow_field(deformable_mirror_2.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5)
+plt.colorbar(label='DM2 Surface (nm)')
+
+# Save the DM surfaces
+fig_dm = plt.gcf()
+img_dm = fig2img(fig_dm)
+img_dm.save('C:/Users/leone/OneDrive/Documents/GitHub/2025-Roman-Preflight-Code/Images/final_dm_surfaces_dm_1_dm_2.png')
 plt.show()
 
 # Print the initial and final contrast values
-
-print("Contrast at first iteration:", average_contrast[0])
-print("Contrast at last iteration:", average_contrast[-1])
+print("Contrast for first iteration:", average_contrast[0])
+print("Contrast for last iteration:", average_contrast[-1])

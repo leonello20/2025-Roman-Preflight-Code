@@ -4,6 +4,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation, FFMpegWriter
 from gaussian_occulter import gaussian_occulter_generator
+from fig2img import fig2img
 import os
 import warnings
 # Suppress RuntimeWarnings globally
@@ -160,14 +161,18 @@ def make_animation_1dm(iteration):
     
     # 1. Electric Field
     ax1 = fig.add_subplot(2, 2, 1)
-    ax1.set_title('Electric field')
+    ax1.set_title('Focal Plane Electric field')
+    ax1.set_xlabel('x/D')
+    ax1.set_ylabel('y/D')
     electric_field = electric_fields[iteration] / np.sqrt(img_ref.max())
     hp.imshow_field(electric_field, norm=electric_field_norm, grid_units=spatial_resolution, ax=ax1)
     hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white', ax=ax1)
 
     # 2. Intensity Image
     ax2 = fig.add_subplot(2, 2, 2)
-    ax2.set_title('Intensity image')
+    ax2.set_title('Focal Plane Intensity image')
+    ax2.set_xlabel('x/D')
+    ax2.set_ylabel('y/D')
     log_intensity = np.log10(images[iteration] / img_ref.max())
     img = hp.imshow_field(log_intensity, grid_units=spatial_resolution, cmap='inferno', vmin=-10, vmax=-5, ax=ax2)
     plt.colorbar(img, ax=ax2)
@@ -176,13 +181,17 @@ def make_animation_1dm(iteration):
     # 3. DM Surface
     ax3 = fig.add_subplot(2, 2, 3)
     deformable_mirror.actuators = actuators[iteration]
-    ax3.set_title('DM surface in nm')
+    ax3.set_title('DM surface')
+    ax3.set_xlabel('x (m)')
+    ax3.set_ylabel('y (m)')
     dm_img = hp.imshow_field(deformable_mirror.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5, ax=ax3)
-    plt.colorbar(dm_img, ax=ax3)
+    plt.colorbar(dm_img, ax=ax3, label='DM Surface (nm)')
 
     # 4. Average Contrast
     ax4 = fig.add_subplot(2, 2, 4)
     ax4.set_title('Average contrast')
+    ax4.set_xlabel('Iteration')
+    ax4.set_ylabel('Contrast ($log_{10}(I/I_{total})$)')
     ax4.plot(range(iteration + 1), average_contrast[:iteration + 1], 'o-')
     ax4.set_xlim(0, num_iterations)
     ax4.set_yscale('log')
@@ -230,6 +239,8 @@ final_iteration = num_iterations - 1
 # Intensity Image
 plt.subplot(1, 2, 1)
 plt.title('Intensity image for last iteration')
+plt.xlabel('x/D')
+plt.ylabel('y/D')
 log_intensity = np.log10(images[final_iteration] / img_ref.max())
 hp.imshow_field(log_intensity, grid_units=spatial_resolution, cmap='inferno', vmin=-10, vmax=-5)
 plt.colorbar(label='Contrast ($log_{10}(I/I_{total})$)')
@@ -237,24 +248,37 @@ hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors=
 
 # Average Contrast
 plt.subplot(1, 2, 2)
-plt.title('Average contrast')
+plt.title('Average Dark Zone Contrast')
+plt.xlabel('Iteration')
+plt.ylabel('Contrast ($log_{10}(I/I_{total})$)')
 plt.plot(range(num_iterations), average_contrast, 'o-')
 plt.xlim(0, num_iterations)
 plt.yscale('log')
 plt.ylim(1e-11, 1e-5)
 plt.grid(color='0.5')
 plt.suptitle('Final Results after %d Iterations' % num_iterations, fontsize='x-large')
+
+# Save the intensity and contrast plot
+fig_intensity = plt.gcf()
+img_intensity = fig2img(fig_intensity)
+img_intensity.save('C:/Users/leone/OneDrive/Documents/GitHub/2025-Roman-Preflight-Code/Images/final_intensity_contrast_dm_1.png')
 plt.show()
 
 # DM Surface
 plt.figure(figsize=(8, 8))
 plt.title('DM surface (nm) for last iteration')
+plt.xlabel('x (m)')
+plt.ylabel('y (m)')
 deformable_mirror.actuators = actuators[final_iteration]
 hp.imshow_field(deformable_mirror.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5)
 plt.colorbar(label='DM Surface (nm)')
+
+# Save the DM surface plot
+fig_dm = plt.gcf()
+img_dm = fig2img(fig_dm)
+img_dm.save('C:/Users/leone/OneDrive/Documents/GitHub/2025-Roman-Preflight-Code/Images/final_dm_surface_dm_1.png')
 plt.show()
 
 # Print the initial and final contrast values
-
-print("Contrast at first iteration:", average_contrast[0])
-print("Contrast at last iteration:", average_contrast[-1])
+print("Contrast for first iteration:", average_contrast[0])
+print("Contrast for last iteration:", average_contrast[-1])
