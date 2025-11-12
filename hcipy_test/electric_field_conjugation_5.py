@@ -109,7 +109,7 @@ def get_jacobian_matrix(get_image, dark_zone, num_modes):
 jacobian = get_jacobian_matrix(get_image, dark_zone, num_modes)
 
 rcond_tikhonov = 1e-8
-efc_iterations = 50
+efc_iterations = 500
 def run_efc(get_image, dark_zone, num_modes, jacobian, rcond):
     # Calculate EFC matrix
     efc_matrix = hp.inverse_tikhonov(jacobian, rcond)
@@ -162,7 +162,8 @@ iteration_range = np.linspace(0, num_iterations - 1, num_iterations, dtype=int)
 
 def make_animation_sm_efc(iteration):
     """Drawing function for a single frame of the SM EFC loop."""
-    plt.clf() 
+    
+    plt.clf()
 
     # 1. Electric field subplot
     plt.subplot(2, 2, 1)
@@ -180,7 +181,7 @@ def make_animation_sm_efc(iteration):
 
     # 3. SM Piston Map subplot
     plt.subplot(2, 2, 3)
-    hsm.actuators = actuators[iteration] 
+    hsm.actuators = actuators[iteration]
     plt.title('SM Piston Map in nm')
     hp.imshow_field(hsm.surface * 1e9, grid_units=pupil_diameter, mask=aper, cmap='RdBu', vmin=-10, vmax=10)
     plt.colorbar()

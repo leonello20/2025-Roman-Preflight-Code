@@ -26,7 +26,7 @@ iwa = 6 * spatial_resolution
 owa = 12 * spatial_resolution
 offset = 1 * spatial_resolution
 
-efc_loop_gain = 0.7
+efc_loop_gain = 0.05
 
 # Create grids
 grid_size = 256
@@ -61,16 +61,18 @@ aberration = hp.SurfaceAberration(pupil_grid, aberration_ptv, pupil_diameter, re
 
 # This uses the 32x32 continuous DM model, matching your goal
 influence_functions = hp.make_xinetics_influence_functions(pupil_grid, num_actuators_across, actuator_spacing)
-deformable_mirror = hp.DeformableMirror(influence_functions)
+deformable_mirror_1 = hp.DeformableMirror(influence_functions)
+deformable_mirror_2 = hp.DeformableMirror(influence_functions)
 
 def get_image(actuators=None, include_aberration=True):
     if actuators is not None:
-        deformable_mirror.actuators = actuators
+        deformable_mirror_1.actuators = actuators[:len(influence_functions)]
+        deformable_mirror_2.actuators = actuators[len(influence_functions):]
     wf = hp.Wavefront(aperture, wavelength)
     if include_aberration:
         wf = aberration(wf)
 
-    img = prop(coronagraph(deformable_mirror(wf)))
+    img = prop(deformable_mirror_2(coronagraph(deformable_mirror_1(wf))))
 
     return img
 
@@ -94,8 +96,8 @@ def get_jacobian_matrix(get_image, dark_zone, num_modes):
     jacobian = np.array(responses).T
     return jacobian
 
-jacobian = get_jacobian_matrix(get_image, dark_zone, len(influence_functions))
-rcond = 0.007
+jacobian = get_jacobian_matrix(get_image, dark_zone, 2 * len(influence_functions))
+rcond = 0.01
 
 def run_efc(get_image, dark_zone, num_modes, jacobian, rcond):
     # Calculate EFC matrix
@@ -109,7 +111,7 @@ def run_efc(get_image, dark_zone, num_modes, jacobian, rcond):
     images = []
 
     # Keeping iterations low for stability
-    NUM_ITERATIONS = 1000
+    NUM_ITERATIONS = 500
     
     for i in range(NUM_ITERATIONS):
         img = get_image(current_actuators)
@@ -132,7 +134,7 @@ def run_efc(get_image, dark_zone, num_modes, jacobian, rcond):
     return actuators, electric_fields, images, NUM_ITERATIONS
 
 # Get the results and the actual number of iterations used
-actuators, electric_fields, images, num_iterations = run_efc(get_image, dark_zone, len(influence_functions), jacobian, rcond)
+actuators, electric_fields, images, num_iterations = run_efc(get_image, dark_zone, 2 * len(influence_functions), jacobian, rcond)
 
 
 
@@ -153,6 +155,8 @@ electric_field_norm = mpl.colors.LogNorm(10**-5, 10**(-2.0), True)
 iteration_range = np.linspace(0, num_iterations-1, num_iterations, dtype=int)
 
 def make_animation_1dm(iteration):
+    deformable_mirror_1.actuators = actuators[iteration][:len(influence_functions)]
+    deformable_mirror_2.actuators = actuators[iteration][len(influence_functions):]
     # Clear the entire figure before drawing new subplots
     fig.clf() 
     
@@ -173,29 +177,34 @@ def make_animation_1dm(iteration):
     plt.colorbar(img, ax=ax2)
     hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white', ax=ax2)
 
-    # 3. DM Surface
-    ax3 = fig.add_subplot(2, 2, 3)
-    deformable_mirror.actuators = actuators[iteration]
-    ax3.set_title('DM surface in nm')
-    dm_img = hp.imshow_field(deformable_mirror.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5, ax=ax3)
+    # 3. DM1 Surface
+    ax3 = fig.add_subplot(2, 3, 4)
+    ax3.set_title('DM1 surface in nm')
+    dm_img = hp.imshow_field(deformable_mirror_1.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5, ax=ax3)
     plt.colorbar(dm_img, ax=ax3)
 
-    # 4. Average Contrast
-    ax4 = fig.add_subplot(2, 2, 4)
-    ax4.set_title('Average contrast')
-    ax4.plot(range(iteration + 1), average_contrast[:iteration + 1], 'o-')
-    ax4.set_xlim(0, num_iterations)
-    ax4.set_yscale('log')
-    ax4.set_ylim(1e-11, 1e-5)
-    ax4.grid(color='0.5')
-    
+    # 4. DM2 Surface
+    ax4 = fig.add_subplot(2, 3, 5)
+    ax4.set_title('DM2 surface in nm')
+    dm_img = hp.imshow_field(deformable_mirror_2.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5, ax=ax4)
+    plt.colorbar(dm_img, ax=ax4)
+
+    # 5. Average Contrast
+    ax5 = fig.add_subplot(2, 3, 6)
+    ax5.set_title('Average contrast')
+    ax5.plot(range(iteration + 1), average_contrast[:iteration + 1], 'o-')
+    ax5.set_xlim(0, num_iterations)
+    ax5.set_yscale('log')
+    ax5.set_ylim(1e-11, 1e-5)
+    ax5.grid(color='0.5')
+
     # Supertitle
     fig.suptitle('Iteration %d / %d' % (iteration + 1, num_iterations), fontsize='x-large')
     
     # Adjust layout to prevent overlap
     fig.tight_layout()
 
-filename = 'efc_loop_animation_dm_1.mp4' # Output filename
+filename = 'efc_loop_animation_dm_1_dm_2.mp4' # Output filename
 print("Setting up animation writer...")
 anim.setup(fig, filename, dpi=50)
 
@@ -246,11 +255,11 @@ plt.grid(color='0.5')
 plt.suptitle('Final Results after %d Iterations' % num_iterations, fontsize='x-large')
 plt.show()
 
-# DM Surface
+# DM 1 Surface
 plt.figure(figsize=(8, 8))
 plt.title('DM surface (nm) for last iteration')
-deformable_mirror.actuators = actuators[final_iteration]
-hp.imshow_field(deformable_mirror.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5)
+deformable_mirror_1.actuators = actuators[final_iteration][:len(influence_functions)]
+hp.imshow_field(deformable_mirror_1.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5)
 plt.colorbar(label='DM Surface (nm)')
 plt.show()
 
