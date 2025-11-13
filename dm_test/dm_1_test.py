@@ -58,7 +58,8 @@ lyot_stop_mask = lyot_stop_generator(pupil_grid)
 coronagraph = hp.LyotCoronagraph(pupil_grid,occulter_mask,lyot_stop_mask)
 
 tip_tilt = hp.make_zernike_basis(3, pupil_diameter, pupil_grid, starting_mode=2)
-aberration = hp.SurfaceAberration(pupil_grid, aberration_ptv, pupil_diameter, remove_modes=tip_tilt, exponent=-3)
+# aberration = hp.SurfaceAberration(pupil_grid, aberration_ptv, pupil_diameter, remove_modes=tip_tilt, exponent=-3)
+aberration = hp.SurfaceAberration(pupil_grid, aberration_ptv, pupil_diameter, exponent=-3)
 
 # This uses the 32x32 continuous DM model, matching your goal
 influence_functions = hp.make_xinetics_influence_functions(pupil_grid, num_actuators_across, actuator_spacing)
