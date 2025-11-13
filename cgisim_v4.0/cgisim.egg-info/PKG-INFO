@@ -1,0 +1,21 @@
+Metadata-Version: 2.4
+Name: cgisim
+Version: 4.0
+Summary: Roman Space Telescope coronagraph simulator
+Home-page: 
+Author: John Krist
+Author-email: john.krist@jpl.nasa.gov
+License: BSD
+Platform: any
+Requires-Dist: numpy>=1.8
+Requires-Dist: scipy>=0.19
+Requires-Dist: astropy>=1.3
+Requires-Dist: emccd_detect>=2.2.5
+Requires-Dist: PyPROPER3>=3.3
+Requires-Dist: roman_preflight_proper>=2.0
+Dynamic: author
+Dynamic: author-email
+Dynamic: license
+Dynamic: platform
+Dynamic: requires-dist
+Dynamic: summary

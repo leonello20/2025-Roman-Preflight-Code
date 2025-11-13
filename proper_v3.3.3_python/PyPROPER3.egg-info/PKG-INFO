@@ -1,0 +1,18 @@
+Metadata-Version: 2.4
+Name: PyPROPER3
+Version: 3.3.3
+Summary: An optical wavefront propagation utility
+Author: Navtej Saini, Nikta Amiri, Luis Marchen
+License: BSD
+Platform: any
+Requires-Dist: numpy>=1.8
+Requires-Dist: scipy>=0.14
+Requires-Dist: astropy>=1.3
+Provides-Extra: pyfftw
+Requires-Dist: pyfftw>=0.10; extra == "pyfftw"
+Dynamic: author
+Dynamic: license
+Dynamic: platform
+Dynamic: provides-extra
+Dynamic: requires-dist
+Dynamic: summary

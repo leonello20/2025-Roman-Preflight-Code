@@ -1,0 +1,19 @@
+Metadata-Version: 2.4
+Name: roman_preflight_proper
+Version: 2.0.1
+Summary: Roman Space Telescope coronagraph pre-flight PROPER prescription
+Home-page: 
+Author: John Krist
+Author-email: john.krist@jpl.nasa.gov
+License: BSD
+Platform: any
+Requires-Dist: numpy>=1.8
+Requires-Dist: scipy>=0.19
+Requires-Dist: astropy>=1.3
+Requires-Dist: PyPROPER3>=3.3
+Dynamic: author
+Dynamic: author-email
+Dynamic: license
+Dynamic: platform
+Dynamic: requires-dist
+Dynamic: summary
