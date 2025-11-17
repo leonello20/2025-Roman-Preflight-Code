@@ -34,7 +34,7 @@ prop = hp.FraunhoferPropagator(pupil_grid, focal_grid)
 # obtain wavefront at telescope pupil plane for the star
 wavefront_star = hp.Wavefront(telescope_pupil)
 
-contrast = 1e-12 # Planet-to-star contrast
+contrast = 1e-14 # Planet-to-star contrast
 sqrt_contrast = np.sqrt(contrast) # Planet-to-star contrast (note: sqrt because we are working with the electric field)
 
 # Planet offset in units of lambda/D
