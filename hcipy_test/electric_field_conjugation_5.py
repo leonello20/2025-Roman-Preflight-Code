@@ -13,8 +13,6 @@ pupil_diameter = 7e-3 # m
 wavelength = 700e-9 # m
 focal_length = 500e-3 # m
 
-num_actuators_across = 32
-actuator_spacing = 1.05 / 32 * pupil_diameter
 aberration_ptv = 0.02 * wavelength # m
 
 epsilon = 1e-9

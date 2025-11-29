@@ -199,7 +199,7 @@ def make_animation_1dm(iteration):
     ax3.set_title('DM1 surface')
     ax3.set_xlabel('x (m)')
     ax3.set_ylabel('y (m)')
-    dm_img = hp.imshow_field(deformable_mirror_1.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5, ax=ax3)
+    dm_img = hp.imshow_field(deformable_mirror_1.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', ax=ax3)
     plt.colorbar(dm_img, ax=ax3, label='DM1 Surface (nm)')
 
     # 4. DM2 Surface
@@ -282,7 +282,7 @@ plt.title('DM1 surface for last iteration')
 plt.xlabel('x (m)')
 plt.ylabel('y (m)')
 deformable_mirror_1.actuators = actuators[final_iteration][:len(influence_functions)]
-hp.imshow_field(deformable_mirror_1.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5)
+hp.imshow_field(deformable_mirror_1.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu')
 plt.colorbar(label='DM1 Surface (nm)')
 
 # DM 2 Surface
@@ -291,7 +291,7 @@ plt.title('DM2 surface for last iteration')
 plt.xlabel('x (m)')
 plt.ylabel('y (m)')
 deformable_mirror_2.actuators = actuators[final_iteration][len(influence_functions):]
-hp.imshow_field(deformable_mirror_2.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5)
+hp.imshow_field(deformable_mirror_2.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu')
 plt.colorbar(label='DM2 Surface (nm)')
 
 # Save the DM surfaces
