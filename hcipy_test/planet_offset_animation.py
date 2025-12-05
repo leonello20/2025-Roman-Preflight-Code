@@ -28,7 +28,7 @@ im_handle = hp.imshow_field(
     vmax=vmax,
     ax=ax
 )
-plt.colorbar(im_handle, label='Contrast ($\log_{10}(I/I_{total})$)')
+plt.colorbar(im_handle, label='Contrast ($log_{10}(I/I_{total})$)')
 # ax.set_title("Coronagraphic Image (Separation: 0.0 $\lambda/D$)")
 title = ax.set_title("")
 ax.set_xlabel('x / D')
@@ -56,7 +56,7 @@ def animate_coronagraph_planet_offset(planet_offset_x):
     wavefront_star = hp.Wavefront(telescope_pupil)
 
     # obtain wavefront at telescope pupil plane for the planet
-    contrast = 1e-10
+    contrast = 1e-12
     sqrt_contrast = np.sqrt(contrast) # Planet-to-star contrast (note: sqrt because we are working with the electric field)
 
     # Planet offset in units of lambda/D

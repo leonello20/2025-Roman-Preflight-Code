@@ -28,7 +28,7 @@ im_handle = hp.imshow_field(
     vmax=vmax,
     ax=ax
 )
-plt.colorbar(im_handle, label='Contrast ($\log_{10}(I/I_{total})$)')
+plt.colorbar(im_handle, label='Contrast ($log_{10}(I/I_{total})$)')
 title = ax.set_title("")
 ax.set_xlabel('x / D')
 ax.set_ylabel('y / D')
@@ -55,8 +55,8 @@ def animate_coronagraph_gaussian_sigma(sigma_lambda_d):
     wavefront_star = hp.Wavefront(telescope_pupil)
 
     # obtain wavefront at telescope pupil plane for the planet
-    contrast = 1e-10
-    sqrt_contrast = np.sqrt(contrast) # Planet-to-star contrast (note: sqrt because we are working with the electric field, )
+    contrast = 1e-12
+    sqrt_contrast = np.sqrt(contrast) # Planet-to-star contrast (note: sqrt because we are working with the electric field)
 
     # Planet offset in units of lambda/D
     planet_offset_x = 15
