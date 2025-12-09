@@ -185,7 +185,7 @@ def make_animation_1dm(iteration):
     ax3.set_title('DM surface')
     ax3.set_xlabel('x (m)')
     ax3.set_ylabel('y (m)')
-    dm_img = hp.imshow_field(deformable_mirror.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', ax=ax3)
+    dm_img = hp.imshow_field(deformable_mirror.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5, ax=ax3)
     plt.colorbar(dm_img, ax=ax3, label='DM Surface (nm)')
 
     # 4. Average Contrast

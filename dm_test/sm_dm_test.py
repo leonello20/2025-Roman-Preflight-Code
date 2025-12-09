@@ -23,7 +23,7 @@ iwa = 6 * spatial_resolution
 owa = 12 * spatial_resolution
 offset = 1 * spatial_resolution
 
-efc_loop_gain = 0.15
+efc_loop_gain = 0.05
 pupil_grid_size = 1024
 
 # Create grids
@@ -108,8 +108,8 @@ def get_jacobian_matrix(get_image, dark_zone, num_modes):
 
 jacobian = get_jacobian_matrix(get_image, dark_zone, num_modes)
 
-rcond_tikhonov = 1e-8
-efc_iterations = 1000
+rcond_tikhonov = 0.0001
+efc_iterations = 500
 def run_efc(get_image, dark_zone, num_modes, jacobian, rcond):
     # Calculate EFC matrix
     efc_matrix = hp.inverse_tikhonov(jacobian, rcond)
@@ -175,7 +175,7 @@ def make_animation_sm_efc(iteration):
     # 2. Intensity image subplot
     plt.subplot(2, 2, 2)
     plt.title('Intensity image (Log Contrast)')
-    hp.imshow_field(np.log10(images[iteration] / img_ref), grid_units=spatial_resolution, cmap='inferno', vmin=-4, vmax=8)
+    hp.imshow_field(np.log10(images[iteration] / img_ref), grid_units=spatial_resolution, cmap='inferno', vmin=-10, vmax=2)
     plt.colorbar()
     hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white')
 
@@ -206,6 +206,8 @@ try:
 
     print(f"Starting animation rendering ({num_iterations} frames)...")
     for i in iteration_range:
+        if (i+1) % 5 == 0 or i == 0:
+            print(f"Rendering frame {i+1} / {num_iterations}")
         make_animation_sm_efc(i) 
         anim.grab_frame()     
         
@@ -225,7 +227,7 @@ finally:
 plt.figure(figsize=(16,6))
 plt.subplot(1,2,1)
 plt.title('Final Intensity Image (Log Contrast)')
-hp.imshow_field(np.log10(images[-1] / img_ref), grid_units=spatial_resolution, cmap='inferno', vmin=-4, vmax=8)
+hp.imshow_field(np.log10(images[-1] / img_ref), grid_units=spatial_resolution, cmap='inferno', vmin=-10, vmax=2)
 plt.colorbar()
 hp.contour_field(dark_zone, grid_units=spatial_resolution, levels=[0.5], colors='white')
 
