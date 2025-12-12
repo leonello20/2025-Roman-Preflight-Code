@@ -74,7 +74,14 @@ def get_image(actuators=None, include_aberration=True):
     if include_aberration:
         wf = aberration(wf)
 
-    img = prop(deformable_mirror_2(coronagraph(deformable_mirror_1(wf))))
+    wf = deformable_mirror_1(wf)
+    lyot_coronagraph = hp.LyotCoronagraph(pupil_grid,occulter_mask,lyot_stop=None)
+    wf = lyot_coronagraph(wf)
+    wf = deformable_mirror_2(wf)
+    wf_electric_field = wf.electric_field * lyot_stop_mask
+    wf = hp.Wavefront(wf_electric_field, wavelength)
+
+    img = prop(wf)
 
     return img
 
@@ -101,6 +108,8 @@ def get_jacobian_matrix(get_image, dark_zone, num_modes):
 jacobian = get_jacobian_matrix(get_image, dark_zone, 2 * len(influence_functions))
 rcond = 0.025
 
+NUM_ITERATIONS = 100
+
 def run_efc(get_image, dark_zone, num_modes, jacobian, rcond):
     # Calculate EFC matrix
     efc_matrix = hp.inverse_tikhonov(jacobian, rcond)
@@ -113,7 +122,6 @@ def run_efc(get_image, dark_zone, num_modes, jacobian, rcond):
     images = []
 
     # Keeping iterations low for stability
-    NUM_ITERATIONS = 1000
     
     for i in range(NUM_ITERATIONS):
         img = get_image(current_actuators)

@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation, FFMpegWriter
 from fig2img import fig2img
 from gaussian_occulter import gaussian_occulter_generator
+from get_jacobian_matrix import get_jacobian_matrix
+from inverse_tikhonov_dm_2 import inverse_tikhonov_dual_dm
 import os
 import warnings
 # Suppress RuntimeWarnings globally
@@ -80,29 +82,17 @@ def get_image(actuators=None, include_aberration=True):
 
 img_ref = prop(hp.Wavefront(aperture, wavelength)).intensity
 
-def get_jacobian_matrix(get_image, dark_zone, num_modes):
-    responses = []
-    amps = np.linspace(-epsilon, epsilon, 2)
+jacobian = get_jacobian_matrix(get_image, dark_zone, 2 * len(influence_functions), epsilon)
+rcond = 0.005
+rcond_dm1 = rcond
+rcond_dm2 = 0.005
 
-    for i, mode in enumerate(np.eye(num_modes)):
-        response = 0
+NUM_ITERATIONS = 50
 
-        for amp in amps:
-            response += amp * get_image(mode * amp, include_aberration=False).electric_field
-
-        response /= np.var(amps)
-        response = response[dark_zone]
-
-        responses.append(np.concatenate((response.real, response.imag)))
-
-    jacobian = np.array(responses).T
-    return jacobian
-
-jacobian = get_jacobian_matrix(get_image, dark_zone, 2 * len(influence_functions))
-rcond = 0.025
-
-def run_efc(get_image, dark_zone, num_modes, jacobian, rcond):
+def run_efc(get_image, num_modes, jacobian):
     # Calculate EFC matrix
+    # efc_matrix = hp.inverse_tikhonov(jacobian, rcond)
+    # efc_matrix = inverse_tikhonov_dual_dm(jacobian, influence_functions, rcond_dm1, rcond_dm2)
     efc_matrix = hp.inverse_tikhonov(jacobian, rcond)
 
     # Run EFC loop
@@ -111,9 +101,6 @@ def run_efc(get_image, dark_zone, num_modes, jacobian, rcond):
     actuators = []
     electric_fields = []
     images = []
-
-    # Keeping iterations low for stability
-    NUM_ITERATIONS = 1000
     
     for i in range(NUM_ITERATIONS):
         img = get_image(current_actuators)
@@ -125,18 +112,26 @@ def run_efc(get_image, dark_zone, num_modes, jacobian, rcond):
         electric_fields.append(electric_field)
         images.append(image)
 
-        x = np.concatenate((electric_field[dark_zone].real, electric_field[dark_zone].imag))
-        y = efc_matrix.dot(x)
+        x = np.concatenate((electric_field[dark_zone].conjugate().real, electric_field[dark_zone].conjugate().imag))
+        y_complex = efc_matrix.dot(x)
+        y = y_complex.real
+
+        num_modes_dm1 = num_modes // 2
+        y_dm1 = y[:num_modes_dm1]
+        y_dm2 = y[num_modes_dm1:]
+
+        y_reversed = np.concatenate((y_dm2, y_dm1))
+        proposed_actuators = current_actuators - efc_loop_gain * y_reversed
 
         current_actuators -= efc_loop_gain * y
         
         # ENFORCE LIMIT: Uses the DM_STROKE_LIMIT variable
-        current_actuators = np.clip(current_actuators, -DM_STROKE_LIMIT, DM_STROKE_LIMIT)
+        current_actuators = np.clip(proposed_actuators, -DM_STROKE_LIMIT, DM_STROKE_LIMIT)
 
     return actuators, electric_fields, images, NUM_ITERATIONS
 
 # Get the results and the actual number of iterations used
-actuators, electric_fields, images, num_iterations = run_efc(get_image, dark_zone, 2 * len(influence_functions), jacobian, rcond)
+actuators, electric_fields, images, num_iterations = run_efc(get_image, 2 * len(influence_functions), jacobian)
 
 
 
@@ -196,7 +191,7 @@ def make_animation_1dm(iteration):
 
     # 3. DM1 Surface
     ax3 = fig.add_subplot(2, 2, 3)
-    ax3.set_title('DM1 surface')
+    ax3.set_title('DM1 surface ($\\lambda_{{DM1}}={rcond_dm1:.3f}$)'.format(rcond_dm1=rcond_dm1))
     ax3.set_xlabel('x (m)')
     ax3.set_ylabel('y (m)')
     dm_img = hp.imshow_field(deformable_mirror_1.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5, ax=ax3)
@@ -204,7 +199,7 @@ def make_animation_1dm(iteration):
 
     # 4. DM2 Surface
     ax4 = fig.add_subplot(2, 2, 4)
-    ax4.set_title('DM2 surface')
+    ax4.set_title('DM2 surface ($\\lambda_{{DM2}}={rcond_dm2:.3f}$)'.format(rcond_dm2=rcond_dm2))
     ax4.set_xlabel('x (m)')
     ax4.set_ylabel('y (m)')
     dm_img = hp.imshow_field(deformable_mirror_2.surface * 1e9, grid_units=pupil_diameter, mask=aperture, cmap='RdBu', vmin=-5, vmax=5, ax=ax4)
@@ -266,19 +261,19 @@ plt.ylabel('Average Contrast ($log_{10}(I/I_{total})$)')
 plt.plot(range(num_iterations), average_contrast, 'o-')
 plt.xlim(0, num_iterations)
 plt.yscale('log')
-plt.ylim(1e-11, 1e-5)
+plt.ylim(1e-11, 1e-2)
 plt.grid(color='0.5')
 plt.suptitle('Final Results after %d Iterations' % num_iterations, fontsize='x-large')
 
 fig_intensity = plt.gcf()
 img_intensity = fig2img(fig_intensity)
-img_intensity.save('C:/Users/leone/OneDrive/Documents/GitHub/2025-Roman-Preflight-Code/Images/dm_1_dm_2_final_intensity.png')
+img_intensity.save('C:/Users/leone/OneDrive/Documents/GitHub/2025-Roman-Preflight-Code/dm_test_2/Images_DM/dm_1_dm_2_dual_rcond_final_intensity.png')
 plt.show()
 
 # DM 1 Surface
 plt.figure(figsize=(12, 6))
 plt.subplot(1, 2, 1)
-plt.title('DM1 surface for last iteration')
+plt.title('DM1 surface ($\\lambda_{{DM1}}={rcond_dm1:.3f}$)'.format(rcond_dm1=rcond_dm1))
 plt.xlabel('x (m)')
 plt.ylabel('y (m)')
 deformable_mirror_1.actuators = actuators[final_iteration][:len(influence_functions)]
@@ -287,7 +282,7 @@ plt.colorbar(label='DM1 Surface (nm)')
 
 # DM 2 Surface
 plt.subplot(1, 2, 2)
-plt.title('DM2 surface for last iteration')
+plt.title('DM2 surface ($\\lambda_{{DM2}}={rcond_dm2:.3f}$)'.format(rcond_dm2=rcond_dm2))
 plt.xlabel('x (m)')
 plt.ylabel('y (m)')
 deformable_mirror_2.actuators = actuators[final_iteration][len(influence_functions):]
@@ -297,7 +292,7 @@ plt.colorbar(label='DM2 Surface (nm)')
 # Save the DM surfaces
 fig_dm = plt.gcf()
 img_dm = fig2img(fig_dm)
-img_dm.save('C:/Users/leone/OneDrive/Documents/GitHub/2025-Roman-Preflight-Code/Images/final_dm_surfaces_dm_1_dm_2.png')
+img_dm.save('C:/Users/leone/OneDrive/Documents/GitHub/2025-Roman-Preflight-Code/dm_test_2/Images_DM/final_dm_surfaces_dm_1_dm_2_dual_rcond.png')
 plt.show()
 
 # Print the initial and final contrast values
