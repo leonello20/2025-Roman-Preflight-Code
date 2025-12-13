@@ -27,7 +27,7 @@ iwa = 6 * spatial_resolution
 owa = 12 * spatial_resolution
 offset = 1 * spatial_resolution
 
-efc_loop_gain = 0.05
+efc_loop_gain = 0.1
 
 # Create grids
 grid_size = 256
@@ -108,7 +108,7 @@ def get_jacobian_matrix(get_image, dark_zone, num_modes):
 jacobian = get_jacobian_matrix(get_image, dark_zone, 2 * len(influence_functions))
 rcond = 0.025
 
-NUM_ITERATIONS = 100
+NUM_ITERATIONS = 1000
 
 def run_efc(get_image, dark_zone, num_modes, jacobian, rcond):
     # Calculate EFC matrix
@@ -223,7 +223,7 @@ def make_animation_1dm(iteration):
     # Adjust layout to prevent overlap
     fig.tight_layout()
 
-filename = 'efc_loop_animation_dm_1_dm_2.mp4' # Output filename
+filename = 'efc_loop_animation_dm_1_dm_2_lyot.mp4' # Output filename
 print("Setting up animation writer...")
 anim.setup(fig, filename, dpi=50)
 
@@ -280,7 +280,7 @@ plt.suptitle('Final Results after %d Iterations' % num_iterations, fontsize='x-l
 
 fig_intensity = plt.gcf()
 img_intensity = fig2img(fig_intensity)
-img_intensity.save('C:/Users/leone/OneDrive/Documents/GitHub/2025-Roman-Preflight-Code/Images/dm_1_dm_2_final_intensity.png')
+img_intensity.save('C:/Users/leone/OneDrive/Documents/GitHub/2025-Roman-Preflight-Code/dm_test_2/Images_DM/final_intensity_dm_1_dm_2_lyot.png')
 plt.show()
 
 # DM 1 Surface
@@ -305,7 +305,7 @@ plt.colorbar(label='DM2 Surface (nm)')
 # Save the DM surfaces
 fig_dm = plt.gcf()
 img_dm = fig2img(fig_dm)
-img_dm.save('C:/Users/leone/OneDrive/Documents/GitHub/2025-Roman-Preflight-Code/Images/final_dm_surfaces_dm_1_dm_2.png')
+img_dm.save('C:/Users/leone/OneDrive/Documents/GitHub/2025-Roman-Preflight-Code/dm_test_2/Images_DM/final_dm_surfaces_dm_1_dm_2_lyot.png')
 plt.show()
 
 # Print the initial and final contrast values
