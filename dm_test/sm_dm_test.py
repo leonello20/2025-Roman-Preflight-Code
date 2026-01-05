@@ -70,6 +70,13 @@ segments = hp.evaluate_supersampled(segments, pupil_grid, 1)
 
 hsm = hp.SegmentedDeformableMirror(segments)
 
+# Plot the segmented deformable mirror
+plt.title('HSM')
+plt.xlabel('x / D')
+plt.ylabel('y / D')
+hp.imshow_field(hsm.surface, grid_units=pupil_diameter, mask=aper, cmap='RdBu', vmin=-5e-9, vmax=5e-9)
+plt.show()
+
 num_modes = len(hsm.influence_functions)
 
 def get_image(actuators=None, include_aberration=True):
