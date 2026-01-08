@@ -1,0 +1,9 @@
+name: CAPYBARA
+dependencies:
+  - python=3.9
+  - conda-forge::numpy=1.21.*
+  - astropy
+  - hcipy
+  - matplotlib
+  - scipy
+  - ipykernel
