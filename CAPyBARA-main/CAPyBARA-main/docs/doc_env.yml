@@ -1,0 +1,12 @@
+name: capybara_docs
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - pip
+  - pip:
+      - sphinx>=7.0
+      - sphinx-rtd-theme
+      - myst-parser
+      - sphinx-autodoc-typehints  # Optional: for better type hint documentation
