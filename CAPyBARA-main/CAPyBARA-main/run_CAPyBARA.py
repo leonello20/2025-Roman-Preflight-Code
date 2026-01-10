@@ -135,7 +135,7 @@ def main(mode: str, config_file: str) -> None:
     # Determine the observing sequence and run the simulation based on mode
     if mode == 'mono':
         # Initialise simulation
-        if sequence['is_efc'] and sequence['is_observation'] is True:
+        if param_rst['sequence']['is_efc'] and param_rst['sequence']['is_observation'] is True:
             # TODO - check the wvl whrther everyhing is in nm or m 
 
             # First setup the system for CaPYBARA - set up an army of them
