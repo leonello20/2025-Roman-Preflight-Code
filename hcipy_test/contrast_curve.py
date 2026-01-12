@@ -46,7 +46,7 @@ def contrast_curve(wavefront_star,focal_grid,prop,wavefront_focal_after_occulter
     # Styling
     ax.set_ylim(-20, -12) # Set limits for typical coronagraph contrast
     ax.set_xlim(x_plot.min(), x_plot.max())
-    ax.set_xlabel('Angular Separation ($x / \\lambda D$)', fontsize=14)
+    ax.set_xlabel('Angular Separation ($x / D$)', fontsize=14)
     ax.set_ylabel('Log Contrast ($log_{10}(I / I_{star,peak})$)', fontsize=14)
     ax.set_title(f"Coronagraph Contrast Curve ($\\sigma = {sigma_lambda_d:.1f} \\lambda/D$)", fontsize=16)
     ax.grid(True, which="both", ls="--", alpha=0.5)
