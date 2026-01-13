@@ -153,12 +153,26 @@ def main(mode: str, config_file: str) -> None:
             # setup the propagation
             CAPyBARA.get_prop()
 
-            CAPyBARA.get_reference_image(wvl=CAPyBARA.param['wvl']*1e-9, check=False)
+            CAPyBARA.get_reference_image(wvl=CAPyBARA.param['wvl']*1e-9, static_aberration_func=None, wavefront_error=None, check=False)
 
             # setup the aberration instance
             aberration_class = rst_aberration.CAPyBARAaberration(sim=CAPyBARA, param=param_rst['efc'])
             aberration_class.set_aberration()
             aberration_class.set_zernike_basis(num_mode=param_rst['efc']['num_mode'])
+
+            try:
+                phase_data = aberration_class.aberration_func(CAPyBARA.wf_ref)
+            except AttributeError:
+                # Fallback if the method isn't in the class yet
+                phase_data = CAPyBARA.wf_ref.phase
+
+                # 2. Extract Zernike coefficients from that phase
+                step0_components_array = aberration_class.extract_component(phase_data)
+
+                # 3. Project back to the grid
+                # Note: np.dot is used to multiply the coefficients by the basis modes
+                projected_phase = np.dot(step0_components_array, aberration_class.zernike_basis)
+                field0 = Field(projected_phase, CAPyBARA.pupil_grid)
 
             # extract component from the wavefront 
             step0_components_array = aberration_class.extract_component(aberration_class.aberration_func(CAPyBARA.wf_ref)) 

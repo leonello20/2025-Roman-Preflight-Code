@@ -49,7 +49,15 @@ class CAPyBARAaberration:
         self.tip_tilt_focus = ModeBasis(_tip_tilt_focus, self.sim.pupil_grid)
 
         # in metres # TODO - change the input value 4*17e-9 
-        self.static_aberration_func = SurfaceAberration(self.sim.pupil_grid, 4*17*1e-9, self.sim.param['diameter'], remove_modes = self.tip_tilt_focus, exponent = -3, seed = seed)
+        self.static_aberration_func = SurfaceAberration(self.sim.pupil_grid, 4*17*1e-9, self.sim.param['diameter'], remove_modes = self.tip_tilt_focus, exponent = -3)
+
+    def aberration_func(self, wavefront):
+        """
+        Extracts the phase (in radians) from an HCIPy Wavefront object.
+        This is what the main script expects to pass into extract_component.
+        """
+        # HCIPy wavefronts have a .phase property which is a Field
+        return wavefront.phase
 
     def extract_component(self, phase):
         return self.zernike_basis.coefficients_for(phase)
