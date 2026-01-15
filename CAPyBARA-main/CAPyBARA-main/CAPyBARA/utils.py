@@ -59,7 +59,7 @@ def save_output(CAPyBARA_list, param_rst, img_list, actuator_list, path):
             print(f'Saving for wavelength: {wvl}')
 
             # Get the reference image
-            CAPyBARA_list[j].get_reference_image(wvl=wvl * 1e-9, check=False)
+            CAPyBARA_list[j].get_reference_image(wvl=wvl * 1e-9, static_aberration_func=None, check=False)
             ref_img = CAPyBARA_list[j].ref_img.shaped
 
             # Save the reference image

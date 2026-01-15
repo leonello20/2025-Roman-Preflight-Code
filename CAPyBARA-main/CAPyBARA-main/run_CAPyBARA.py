@@ -194,7 +194,7 @@ def main(mode: str, config_file: str) -> None:
             #%% Running the control
 
             efc_exp = EFieldConjugation(CAPyBARA, aberration_class)
-            actuator_list, e_field_list, img_list, wf_lyot_list, wf_post_lyot_list, wf_list = efc_exp.control(wvl=[CAPyBARA.param['wvl']])
+            actuator_list, e_field_list, img_list, wf_list, wf_post_lyot_list = efc_exp.control(wvl=[CAPyBARA.param['wvl']])
 
             #%% Save efc output 
             # TODO - move it somewhere else 
@@ -219,7 +219,7 @@ def main(mode: str, config_file: str) -> None:
             obs_aberration_class.set_zernike_basis(num_mode=param_rst['observation']['num_mode'])
 
             # If the observing wvl has been changed, get to the new wvl, and get a new reference image 
-            CAPyBARA.get_reference_image(wvl=param_rst['observation']['wvl']*1e-9, check=True)
+            CAPyBARA.get_reference_image(wvl=param_rst['observation']['wvl']*1e-9, static_aberration_func=None, check=True)
             
             print(f'What is the shape of the actuator? {np.shape(actuator_list[-1])}')
 
@@ -254,8 +254,7 @@ def main(mode: str, config_file: str) -> None:
             # obs_aberration_class.aberration_cube[0] = aberration_class.aberration_cube[-1]
 
             # CHECK - Here to check if I can get back to the dark hole or not
-            ref_psf_list, ref_dm = OS_class.accquisition_loop(wvl=[param_rst['observation']['wvl']], aberration_sequence=
-            aberration_class.aberration_cube, last_dm_command=actuator_list[-1])
+            ref_psf_list, ref_dm, wf_lyot_list, wf_residual_list = OS_class.acquisition_loop(wvl=[param_rst['observation']['wvl']], actuators=actuator_list[-1])
 
             # obs_aberration_class.aberration_cube
 
@@ -268,10 +267,10 @@ def main(mode: str, config_file: str) -> None:
                 obs_path = path + date + '_' + OS_class.name
                 save_output(CAPyBARA, param_rst['observation'], ref_psf_list, ref_dm, obs_path)
 
-        elif sequence['is_efc'] is True and  sequence['is_observation'] is False: 
+        elif param_rst['sequence']['is_efc'] is True and  param_rst['sequence']['is_observation'] is False: 
             print('Run EFC Only (Not implenmented yet)')
 
-        elif sequence['is_efc'] is False and  sequence['is_observation'] is True: 
+        elif param_rst['sequence']['is_efc'] is False and  param_rst['sequence']['is_observation'] is True: 
             print('Run observing Only (Not implenmented yet)')
 
         print('End')
