@@ -16,29 +16,6 @@ occrad = 1.0  # Occulter radius in lambda/D units
 (unaberrated_star_wfo, sampling) = occulter(wavelength, diam_telescope, grid_size, occrad, PASSVALUE={'occulter_type': 'NONE'})
 (final_wavefront_coronagraph, sampling) = occulter(wavelength, diam_telescope, grid_size, occrad, PASSVALUE={'occulter_type': occulter_type})
 
-"""
-(unaberrated_star_wfo, sampling) = proper.prop_run(
-    'run_occulter',
-    wavelength,
-    grid_size,
-    PASSVALUE={'occulter_type': 'NONE'},    # Simulate no occulter
-    zernike_coeffs=None,  # No aberrations
-    source_offset_lam_over_d=(0, 0)  # On-axis star
-)
-#max_unaberrated_star_flux = np.max(np.abs(unaberrated_star_wfo)**2)
-
-(final_wavefront_coronagraph, sampling) = proper.prop_run(
-    'run_occulter',
-    wavelength,
-    grid_size,
-    PASSVALUE={'occulter_type': occulter_type},
-    zernike_coeffs=None,  # No aberrations
-    source_offset_lam_over_d=(0, 0)  # On-axis star
-)
-
-print(type(final_wavefront_coronagraph))
-"""
-
 # lambda/D separation for the central horizontal cross-section
 lambda_D_separation = pixel_to_lambda_D(final_wavefront_coronagraph, diam_telescope, grid_size)
 # Calculate contrast curve
@@ -48,7 +25,7 @@ contrast = contrast_curve(unaberrated_star_wfo, final_wavefront_coronagraph, gri
 
 plt.figure(figsize=(12, 8))
 plt.title("Contrast Curve")
-plt.xlabel("Angular Separation ($\lambda/D$)")
+plt.xlabel("Angular Separation ($\\lambda/D$)")
 plt.ylabel("Contrast")
 plt.semilogy(lambda_D_separation, contrast)
 plt.show()
