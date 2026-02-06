@@ -3,7 +3,7 @@ import proper
 import numpy as np
 import matplotlib.pylab as plt
 
-def coronagraph(wfo, f_lens, occulter_type, diam, offset_x=0.0, offset_y=0.0, zernike_coeffs=None, is_plotting=False):
+def coronagraph(wfo, f_lens, fpm_real, fpm_imag, dm1, dm2):
     # 1. Propogate to Focal Plane 1 (F1 - Occulter Plane)
     proper.prop_lens(wfo, f_lens, "F1 - no occulter")
     proper.prop_propagate(wfo, f_lens, "F1 - occulter plane")
@@ -13,6 +13,19 @@ def coronagraph(wfo, f_lens, occulter_type, diam, offset_x=0.0, offset_y=0.0, ze
     plt.imshow(proper.prop_get_amplitude(wfo), origin = "lower", cmap = plt.cm.gray)
     plt.show()
     lamda = proper.prop_get_wavelength(wfo)
+
+    # 3. Multiply by the occulter
+    fpm_real_map = proper.prop_readmap(wfo, fpm_real, SAMPLING=proper.prop_get_sampling(wfo))
+    fpm_imag_map = proper.prop_readmap(wfo, fpm_imag, SAMPLING=proper.prop_get_sampling(wfo))
+    print(proper.prop_get_sampling(wfo))
+    fpm_complex = fpm_real_map + 1j * fpm_imag_map
+    proper.prop_multiply(wfo, fpm_complex)
+
+    # 4. Plot the wavefront after the occulter
+    plt.figure(figsize=(12,8))
+    plt.imshow(proper.prop_get_amplitude(wfo), origin = "lower", cmap = plt.cm.gray)
+    plt.show()
+
     return wfo
 
 """
