@@ -6,32 +6,26 @@ from astropy.io import fits
 
 def run_hlc_simulation():
     # 1. Initialize Deformable Mirrors (DMs)
-    # HLC uses two DMs to 'dig' the dark hole. 
-    # For a flat-wavefront start, we initialize with zeros (48x48 actuators).
-    # dm1 = np.zeros((48, 48))
-    # dm2 = np.zeros((48, 48))
     dm1_path = "C:\\Users\\leone\\OneDrive\\Documents\\GitHub\\2025-Roman-Preflight-Code\\roman_preflight_proper_public_v2.0.1_python\\roman_preflight_proper\\preflight_data\\hlc_20190210b\\hlc_dm1.fits"
     dm2_path = "C:\\Users\\leone\\OneDrive\\Documents\\GitHub\\2025-Roman-Preflight-Code\\roman_preflight_proper_public_v2.0.1_python\\roman_preflight_proper\\preflight_data\\hlc_20190210b\\hlc_dm2.fits"
+    dm1_path = "C:\\Users\\leone\\OneDrive\\Documents\\GitHub\\2025-Roman-Preflight-Code\\roman_preflight_proper_public_v2.0.1_python\\roman_preflight_proper\\examples\\hlc_ni_2e-9_dm1_v.fits"
+    dm2_path = "C:\\Users\\leone\\OneDrive\\Documents\\GitHub\\2025-Roman-Preflight-Code\\roman_preflight_proper_public_v2.0.1_python\\roman_preflight_proper\\examples\\hlc_ni_2e-9_dm2_v.fits"
     dm1 = fits.getdata(dm1_path)
     dm2 = fits.getdata(dm2_path)
 
     # 2. Configure Parameters for HLC Band 1
-    # 'excam' refers to the imaging camera.
-    # 'hlc' is the Hybrid Lyot Coronagraph mode.
-    # '1' corresponds to Band 1 (Center: 575nm, BW: 10%).
-    # 'polaxis': 10 runs all polarizations for high fidelity.
     params = {
-        'use_dm1': 1, 
+        'use_dm1': 1,
         'dm1_m': dm1, 
         'use_dm2': 1, 
         'dm2_m': dm2, 
-        'source_x_offset_mas': 0.0,  # 3.0 mas offset as requested
-        'use_errors': 1,             # Include as-built optical errors
+        'source_x_offset_mas': 0.0,
+        'use_errors': 0,
+        'use_fpm': 1
     }
     print("Starting HLC Band 1 Simulation...")
     
     # 3. Execute the simulation
-    # 10 iterations (or samples) across the 10% bandpass.
     # Star: A0V (standard Vega-like), Magnitude 2.0.
     image, counts = cgisim.rcgisim(
         'excam', 
@@ -40,7 +34,7 @@ def run_hlc_simulation():
         10, 
         params, 
         star_spectrum='a0v', 
-        star_vmag=2.0
+        star_vmag=7.0
     )
 
     print("Simulation Complete.")
@@ -48,9 +42,7 @@ def run_hlc_simulation():
 
 def analyze_results(image, counts):
     # 1. Visualization
-    # Using log scale because coronagraphic contrast spans many orders of magnitude
     plt.figure(figsize=(10, 8))
-    # We add a small epsilon to avoid log(0)
     plt.imshow(np.log10(image + 1e-15), cmap='magma')
     plt.colorbar(label='Log10 Intensity')
     plt.title('HLC Band 1 - Raw Simulation Output (Uncorrected)')
@@ -61,8 +53,7 @@ def analyze_results(image, counts):
     print(f"Peak Pixel Value: {np.max(image):.2e}")
     print(f"Mean Intensity: {np.mean(image):.2e}")
 
-    # 3. Save to FITS for project records
-    # This allows you to open the result in DS9 or Glue
+    # 3. Save to FITS
     hdu = fits.PrimaryHDU(image)
     hdu.header['MODE'] = 'HLC Band 1'
     hdu.header['OFFSET'] = '0.0 mas'
@@ -71,11 +62,10 @@ def analyze_results(image, counts):
 
 if __name__ == "__main__":
     img, cnts = run_hlc_simulation()
-    # You can now use your preferred plotting tool to see the resulting PSF/Dark Hole.
     try:
         analyze_results(img, cnts)
     except NameError:
-        print("Please ensure 'img' and 'cnts' from the simulation are available.")
+        print("Ensure 'img' and 'cnts' from the simulation are available.")
 
 """
 import numpy as np

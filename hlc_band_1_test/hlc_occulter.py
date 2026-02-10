@@ -4,7 +4,7 @@ import matplotlib.pylab as plt
 import astropy.io.fits as fits
 from coronagraph import coronagraph
 
-def occulter(wavelength, diam, grid_size, beam_ratio, f_lens, pupil, fpm_real, fpm_imag, dm1, dm2, lyot_stop):
+def hlc_occulter(wavelength, diam, grid_size, beam_ratio, f_lens, pupil, fpm_real, fpm_imag, dm1, dm2, lyot_stop):
     pupil_sampling = diam / (grid_size * beam_ratio)
     # pupil_sampling = diam/grid_size
 
