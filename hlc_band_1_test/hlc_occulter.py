@@ -4,10 +4,7 @@ import matplotlib.pylab as plt
 import astropy.io.fits as fits
 from coronagraph import coronagraph
 
-def hlc_occulter(wavelength, diam, grid_size, beam_ratio, f_lens, pupil, fpm_real, fpm_imag, dm1, dm2, lyot_stop):
-    # pupil_sampling = diam / (grid_size * beam_ratio)
-    # pupil_sampling = diam/grid_size
-
+def hlc_occulter(wavelength, diam, scale_occulter, grid_size, beam_ratio, f_lens, pupil, fpm_real, fpm_imag, dm1, dm2, lyot_stop):
     # 1. Initialize the wavefront at the entrance pupil
     wfo = proper.prop_begin(diam, wavelength, grid_size, beam_ratio)
 
@@ -16,7 +13,6 @@ def hlc_occulter(wavelength, diam, grid_size, beam_ratio, f_lens, pupil, fpm_rea
     pupil = proper.prop_errormap( wfo, pupil, 0, 0, AMPLITUDE=True, SAMPLING=sampling)
     print("Type of pupil:", type(pupil), "Shape of pupil:", pupil.shape)
     proper.prop_multiply(wfo, pupil)
-
     amplitude = proper.prop_get_amplitude(wfo)
 
     # 3. Plot the entrance pupil
@@ -46,26 +42,25 @@ def hlc_occulter(wavelength, diam, grid_size, beam_ratio, f_lens, pupil, fpm_rea
     plt.title("Focal Plane - After DMs", fontsize = 18)
     plt.show()
 
-    # 6. Multiply by the occulter
-    fpm_s = proper.prop_get_sampling(wfo)
-    fpm_real_map = proper.prop_readmap(wfo, fpm_real, 0, 0, AMPLITUDE=True, SAMPLING=fpm_s)
-    fpm_imag_map = proper.prop_readmap(wfo, fpm_imag, 0, 0, AMPLITUDE=True, SAMPLING=fpm_s)
-    fpm_real = np.fft.fftshift(fpm_real_map)
-    fpm_imag = np.fft.fftshift(fpm_imag_map)
-    # fpm_real_map = proper.prop_readmap(wfo, fpm_real, SAMPLING=proper.prop_get_sampling(wfo))
-    # fpm_imag_map = proper.prop_readmap(wfo, fpm_imag, SAMPLING=proper.prop_get_sampling(wfo))
-    fpm_complex = fpm_real + 1j * fpm_imag
-    proper.prop_multiply(wfo, fpm_complex)
-    max_no_occulter_amplitude = np.max(proper.prop_get_amplitude(wfo))
+    # 6. Multiply by the occulter (if scale_occulter is not zero, otherwise skip this step for the "no occulter" case)
+    if (scale_occulter != 0):
+        fpm_s = proper.prop_get_sampling(wfo)
+        fpm_real_map = proper.prop_readmap(wfo, fpm_real, 0, 0, AMPLITUDE=True, SAMPLING=fpm_s*scale_occulter)
+        fpm_imag_map = proper.prop_readmap(wfo, fpm_imag, 0, 0, AMPLITUDE=True, SAMPLING=fpm_s*scale_occulter)
+        fpm_real = np.fft.fftshift(fpm_real_map)
+        fpm_imag = np.fft.fftshift(fpm_imag_map)
+        fpm_complex = fpm_real + 1j * fpm_imag
+        proper.prop_multiply(wfo, fpm_complex)
+        max_no_occulter_amplitude = np.max(proper.prop_get_amplitude(wfo))
 
-    # 7. Plot the wavefront after the occulter
-    plt.figure(figsize=(12,8))
-    plt.imshow((proper.prop_get_amplitude(wfo))**(1/4), origin = "lower", cmap = plt.cm.gray)
-    plt.title("Focal Plane 1 - After Occulter", fontsize = 18)
-    plt.show()
-    max_amplitude_occulter = np.max(proper.prop_get_amplitude(wfo))
-    occulter_no_occulter = max_amplitude_occulter / max_no_occulter_amplitude
-    print(f"Occulter suppression factor (peak amplitude with occulter / peak amplitude without occulter): {occulter_no_occulter:.2e}")
+        # 7. Plot the wavefront after the occulter
+        plt.figure(figsize=(12,8))
+        plt.imshow((proper.prop_get_amplitude(wfo))**(1/4), origin = "lower", cmap = plt.cm.gray)
+        plt.title("Focal Plane 1 - After Occulter", fontsize = 18)
+        plt.show()
+        max_amplitude_occulter = np.max(proper.prop_get_amplitude(wfo))
+        occulter_no_occulter = max_amplitude_occulter / max_no_occulter_amplitude
+        print(f"Occulter suppression factor (peak amplitude with occulter / peak amplitude without occulter): {occulter_no_occulter:.2e}")
 
     # 8. Propagate to Lyot Plane
     proper.prop_propagate(wfo, f_lens, "Lyot Plane - with Lyot Stop")
@@ -103,4 +98,11 @@ def hlc_occulter(wavelength, diam, grid_size, beam_ratio, f_lens, pupil, fpm_rea
 
     # 13. End the PROPER simulation
     sampling = proper.prop_get_sampling(wfo)
+
+    # 14. Save the final image plane field to a FITS file for later analysis (if scale_occulter is not zero, otherwise skip this step for the "no occulter" case)
+    if (scale_occulter != 0):
+        hdu = fits.PrimaryHDU(amplitude_detector)
+        hdu.header['MODE'] = 'HLC Band 1'
+        hdu.header['ITERATION'] = 'Final'
+        hdu.writeto('hlc_band1_proper_results.fits', overwrite=True)
     return (wfo, sampling)
