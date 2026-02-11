@@ -1,71 +1,102 @@
-# main_hlc_cgisim.py
+#   Copyright 2019 California Institute of Technology
+#   Users must agree to abide by the restrictions listed in the 
+#   file "LegalStuff.txt" in the CGISim library directory.
+#
+#  Written by John Krist
+#  Jet Propulsion Laboratory, California Institute of Technology
+#  28 August 2019
+
+
+import cgisim as cgisim
+import proper
+import matplotlib.pylab as plt
+from matplotlib.colors import LogNorm
 import numpy as np
-import cgisim
-import matplotlib.pyplot as plt
 from astropy.io import fits
+from roman_preflight_proper import trim
+import roman_preflight_proper
 
-def run_hlc_simulation():
-    # 1. Initialize Deformable Mirrors (DMs)
-    dm1_path = "C:\\Users\\leone\\OneDrive\\Documents\\GitHub\\2025-Roman-Preflight-Code\\roman_preflight_proper_public_v2.0.1_python\\roman_preflight_proper\\preflight_data\\hlc_20190210b\\hlc_dm1.fits"
-    dm2_path = "C:\\Users\\leone\\OneDrive\\Documents\\GitHub\\2025-Roman-Preflight-Code\\roman_preflight_proper_public_v2.0.1_python\\roman_preflight_proper\\preflight_data\\hlc_20190210b\\hlc_dm2.fits"
-    dm1_path = "C:\\Users\\leone\\OneDrive\\Documents\\GitHub\\2025-Roman-Preflight-Code\\roman_preflight_proper_public_v2.0.1_python\\roman_preflight_proper\\examples\\hlc_ni_2e-9_dm1_v.fits"
-    dm2_path = "C:\\Users\\leone\\OneDrive\\Documents\\GitHub\\2025-Roman-Preflight-Code\\roman_preflight_proper_public_v2.0.1_python\\roman_preflight_proper\\examples\\hlc_ni_2e-9_dm2_v.fits"
-    dm1 = fits.getdata(dm1_path)
-    dm2 = fits.getdata(dm2_path)
+def testsim_hlc_iterations():
+    cgi_mode = 'excam'
+    cor_type = 'hlc'
+    bandpass = '1'
+    polaxis = -10       # compute images for mean X+Y polarization (don't compute at each polarization)
 
-    # 2. Configure Parameters for HLC Band 1
-    params = {
-        'use_dm1': 1,
-        'dm1_m': dm1, 
-        'use_dm2': 1, 
-        'dm2_m': dm2, 
-        'source_x_offset_mas': 0.0,
-        'use_errors': 0,
-        'use_fpm': 1
-    }
-    print("Starting HLC Band 1 Simulation...")
+    dm1 = proper.prop_fits_read( roman_preflight_proper.lib_dir+'/examples/hlc_flat_wfe_dm1_v.fits' )
+    dm2 = proper.prop_fits_read( roman_preflight_proper.lib_dir+'/examples/hlc_flat_wfe_dm2_v.fits' )
+    params = {'use_errors':1, 'use_dm1':1, 'dm1_v':dm1, 'use_dm2':1, 'dm2_v':dm2}
+    print( "Computing A0V star coronagraphic field, flattened WFE" )
+    a0_flattened, a0_counts = cgisim.rcgisim( cgi_mode, cor_type, bandpass, polaxis, params, 
+        star_spectrum='a0v', star_vmag=2.0 )
+
+    #dm1 = proper.prop_fits_read( roman_preflight_proper.lib_dir+'/examples/hlc_ni_3e-8_dm1_v.fits' )
+    #dm2 = proper.prop_fits_read( roman_preflight_proper.lib_dir+'/examples/hlc_ni_3e-8_dm2_v.fits' )
+    #params = {'use_errors':1, 'use_dm1':1, 'dm1_v':dm1, 'use_dm2':1, 'dm2_v':dm2}
+    #print( "Computing A0V star coronagraphic field, worst-contrast dark hole" )
+    #a0_worst, a0_counts = cgisim.rcgisim( cgi_mode, cor_type, bandpass, polaxis, params, 
+    #    star_spectrum='a0v', star_vmag=2.0 )
+
+    #dm1 = proper.prop_fits_read( roman_preflight_proper.lib_dir+'/examples/hlc_ni_5e-9_dm1_v.fits' )
+    #dm2 = proper.prop_fits_read( roman_preflight_proper.lib_dir+'/examples/hlc_ni_5e-9_dm2_v.fits' )
+    #params = {'use_errors':1, 'use_dm1':1, 'dm1_v':dm1, 'use_dm2':1, 'dm2_v':dm2}
+    #print( "Computing A0V star coronagraphic field, mild-contrast dark hole" )
+    #a0_mild, a0_counts = cgisim.rcgisim( cgi_mode, cor_type, bandpass, polaxis, params, 
+    #    star_spectrum='a0v', star_vmag=2.0 )
+
+    dm1 = proper.prop_fits_read( roman_preflight_proper.lib_dir+'/examples/hlc_ni_2e-9_dm1_v.fits' )
+    dm2 = proper.prop_fits_read( roman_preflight_proper.lib_dir+'/examples/hlc_ni_2e-9_dm2_v.fits' )
+    params = {'use_errors':1, 'use_dm1':1, 'dm1_v':dm1, 'use_dm2':1, 'dm2_v':dm2}
+    print( "Computing A0V star coronagraphic field, best-contrast dark hole" )
+    a0_best, a0_counts = cgisim.rcgisim( cgi_mode, cor_type, bandpass, polaxis, params, 
+        star_spectrum='a0v', star_vmag=2.0 )
+
+    # omit FPM to get unocculted PSF to compute NI
+
+    print( "Computing A0V star unocculted PSF" )
+    params = {'use_errors':1, 'use_dm1':1, 'dm1_v':dm1, 'use_dm2':1, 'dm2_v':dm2, 'use_fpm':0}
+    a0_psf, a0_counts = cgisim.rcgisim( cgi_mode, cor_type, bandpass, polaxis, params, 
+        star_spectrum='a0v', star_vmag=2.0 )
+    max_psf = np.max(a0_psf)
+
+    #ni_worst = a0_worst / max_psf
+    #ni_mild = a0_mild / max_psf
+    ni_best = a0_best / max_psf
+
+    #fig, ax = plt.subplots( nrows=2, ncols=2, figsize=(9,9) )
+
+    #im = ax[0,0].imshow( trim(ni_flattened,100), norm=LogNorm(vmin=1e-10,vmax=1e-5), cmap=plt.get_cmap('jet'))
+    #ax[0,0].set_title('Flattened WFE')
+    #fig.colorbar( im, ax=ax[0,0], shrink=0.5 ) 
+
+    #im = ax[0,1].imshow( trim(ni_worst,100), norm=LogNorm(vmin=1e-10,vmax=1e-5), cmap=plt.get_cmap('jet'))
+    #ax[0,1].set_title('Early iteration')
+    #fig.colorbar( im, ax=ax[0,1], shrink=0.5 ) 
+
+    #im = ax[1,0].imshow( trim(ni_mild,100), norm=LogNorm(vmin=1e-10,vmax=1e-5), cmap=plt.get_cmap('jet'))
+    #ax[1,0].set_title('Intermediate iteration')
+    #fig.colorbar( im, ax=ax[1,0], shrink=0.5 ) 
+
+    #im = ax[1,1].imshow( trim(ni_best,100), norm=LogNorm(vmin=1e-10,vmax=1e-5), cmap=plt.get_cmap('jet'))
+    #ax[1,1].set_title('Final iteration')
+    #fig.colorbar( im, ax=ax[1,1], shrink=0.5 ) 
+
+    #plt.show()
+
+    # Save image to fits file
     
-    # 3. Execute the simulation
-    # Star: A0V (standard Vega-like), Magnitude 2.0.
-    image, counts = cgisim.rcgisim(
-        'excam', 
-        'hlc', 
-        '1', 
-        10, 
-        params, 
-        star_spectrum='a0v', 
-        star_vmag=7.0
-    )
-
-    print("Simulation Complete.")
-    return image, counts
-
-def analyze_results(image, counts):
-    # 1. Visualization
-    plt.figure(figsize=(10, 8))
-    plt.imshow(np.log10(image + 1e-15), cmap='magma')
-    plt.colorbar(label='Log10 Intensity')
-    plt.title('HLC Band 1 - Raw Simulation Output (Uncorrected)')
-    plt.show()
-
-    # 2. Statistics
-    print(f"Total Photons (Counts): {np.sum(counts):.2e}")
-    print(f"Peak Pixel Value: {np.max(image):.2e}")
-    print(f"Mean Intensity: {np.mean(image):.2e}")
-
-    # 3. Save to FITS
-    hdu = fits.PrimaryHDU(image)
+    hdu = fits.PrimaryHDU(ni_best)
     hdu.header['MODE'] = 'HLC Band 1'
-    hdu.header['OFFSET'] = '0.0 mas'
-    hdu.writeto('hlc_band1_result.fits', overwrite=True)
-    print("Saved result to hlc_band1_result.fits")
+    hdu.header['ITERATION'] = 'Final'
+    hdu.writeto('hlc_band1_results.fits', overwrite=True)
 
-if __name__ == "__main__":
-    img, cnts = run_hlc_simulation()
-    try:
-        analyze_results(img, cnts)
-    except NameError:
-        print("Ensure 'img' and 'cnts' from the simulation are available.")
+    # Save image (all parts of subplot) to png file for quick viewing
+    #fig.savefig('hlc_iterations.png', dpi=300)
+
+if __name__ == '__main__':
+    testsim_hlc_iterations()
+
+
+
 
 """
 import numpy as np

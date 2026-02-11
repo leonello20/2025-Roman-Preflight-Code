@@ -14,7 +14,7 @@ occulter_type = 'GAUSSIAN'  # Type of occulter to use
 diam_telescope = 2.363  # Telescope diameter in meters
 occrad = 1.0  # Occulter radius in lambda/D units
 f_lens = 24 * diam_telescope
-beam_ratio = 0.3
+beam_ratio = 1
 
 pupil = "C:\\Users\\leone\\OneDrive\\Documents\\GitHub\\2025-Roman-Preflight-Code\\roman_preflight_proper_public_v2.0.1_python\\roman_preflight_proper\\preflight_data\\hlc_20190210b\\pupil.fits"
 dm1 = "C:\\Users\\leone\\OneDrive\\Documents\\GitHub\\2025-Roman-Preflight-Code\\roman_preflight_proper_public_v2.0.1_python\\roman_preflight_proper\\preflight_data\\hlc_20190210b\\hlc_dm1.fits"
@@ -25,6 +25,10 @@ lyot_stop = "C:\\Users\\leone\\OneDrive\\Documents\\GitHub\\2025-Roman-Preflight
 
 # (unaberrated_star_wfo, sampling) = occulter(wavelength, diam_telescope, grid_size, occrad, pupil, dm1, dm2, PASSVALUE={'occulter_type': 'NONE'})
 (final_wavefront_coronagraph, sampling) = hlc_occulter(wavelength, diam_telescope, grid_size, beam_ratio, f_lens, pupil, fpm_real, fpm_imag, dm1, dm2, lyot_stop)
+
+
+
+
 
 """
 # lambda/D separation for the central horizontal cross-section

@@ -5,26 +5,19 @@ import astropy.io.fits as fits
 from coronagraph import coronagraph
 
 def hlc_occulter(wavelength, diam, grid_size, beam_ratio, f_lens, pupil, fpm_real, fpm_imag, dm1, dm2, lyot_stop):
-    pupil_sampling = diam / (grid_size * beam_ratio)
+    # pupil_sampling = diam / (grid_size * beam_ratio)
     # pupil_sampling = diam/grid_size
 
     # 1. Initialize the wavefront at the entrance pupil
     wfo = proper.prop_begin(diam, wavelength, grid_size, beam_ratio)
-    # wfo.wfarr = np.fft.fftshift(wfo.wfarr)
-    # proper.prop_circular_aperture(wfo, diam)
-    # proper.prop_define_entrance(wfo)
 
     # 2. Read the pupil map and apply it to the wavefront
-    shift = 1.5*diam
-    pupil_map = proper.prop_readmap(wfo, pupil, shift, shift, SAMPLING=pupil_sampling)
-    pupil = fits.getdata(pupil)
-    pupil = proper.prop_shift_center(pupil)
-    pupil = proper.prop_shift_center(pupil)
-    # pupil = proper.prop_shift_center(pupil)
-    proper.prop_multiply(wfo, pupil_map)
+    sampling = diam/grid_size
+    pupil = proper.prop_errormap( wfo, pupil, 0, 0, AMPLITUDE=True, SAMPLING=sampling)
+    print("Type of pupil:", type(pupil), "Shape of pupil:", pupil.shape)
+    proper.prop_multiply(wfo, pupil)
 
     amplitude = proper.prop_get_amplitude(wfo)
-    # amplitude = np.fft.fftshift(amplitude)
 
     # 3. Plot the entrance pupil
     plt.figure(figsize=(12,8))
@@ -41,7 +34,6 @@ def hlc_occulter(wavelength, diam, grid_size, beam_ratio, f_lens, pupil, fpm_rea
     # 4. Plot the pupil plane after DMs
     plt.figure(figsize=(12,8))
     amplitude_after_dms = proper.prop_get_amplitude(wfo)
-    amplitude_after_dms = np.fft.fftshift(amplitude_after_dms)
     plt.imshow(amplitude_after_dms, origin = "lower", cmap = plt.cm.gray)
     plt.title("Pupil Plane - After DMs", fontsize = 18)
     plt.show()
@@ -55,34 +47,34 @@ def hlc_occulter(wavelength, diam, grid_size, beam_ratio, f_lens, pupil, fpm_rea
     plt.show()
 
     # 6. Multiply by the occulter
-    shift = 0.002
     fpm_s = proper.prop_get_sampling(wfo)
-    fpm_real_map = proper.prop_readmap(wfo, fpm_real, shift, shift, SAMPLING=fpm_s)
-    fpm_imag_map = proper.prop_readmap(wfo, fpm_imag, shift, shift, SAMPLING=fpm_s)
+    fpm_real_map = proper.prop_readmap(wfo, fpm_real, 0, 0, AMPLITUDE=True, SAMPLING=fpm_s)
+    fpm_imag_map = proper.prop_readmap(wfo, fpm_imag, 0, 0, AMPLITUDE=True, SAMPLING=fpm_s)
+    fpm_real = np.fft.fftshift(fpm_real_map)
+    fpm_imag = np.fft.fftshift(fpm_imag_map)
     # fpm_real_map = proper.prop_readmap(wfo, fpm_real, SAMPLING=proper.prop_get_sampling(wfo))
     # fpm_imag_map = proper.prop_readmap(wfo, fpm_imag, SAMPLING=proper.prop_get_sampling(wfo))
-    fpm_complex = fpm_real_map + 1j * fpm_imag_map
+    fpm_complex = fpm_real + 1j * fpm_imag
     proper.prop_multiply(wfo, fpm_complex)
+    max_no_occulter_amplitude = np.max(proper.prop_get_amplitude(wfo))
 
     # 7. Plot the wavefront after the occulter
     plt.figure(figsize=(12,8))
     plt.imshow((proper.prop_get_amplitude(wfo))**(1/4), origin = "lower", cmap = plt.cm.gray)
     plt.title("Focal Plane 1 - After Occulter", fontsize = 18)
     plt.show()
+    max_amplitude_occulter = np.max(proper.prop_get_amplitude(wfo))
+    occulter_no_occulter = max_amplitude_occulter / max_no_occulter_amplitude
+    print(f"Occulter suppression factor (peak amplitude with occulter / peak amplitude without occulter): {occulter_no_occulter:.2e}")
 
     # 8. Propagate to Lyot Plane
     proper.prop_propagate(wfo, f_lens, "Lyot Plane - with Lyot Stop")
     proper.prop_lens(wfo, f_lens, "Lyot Plane - no Lyot Stop")
     proper.prop_propagate(wfo, f_lens, "Lyot Plane - with Lyot Stop")
-    # proper.prop_lens(wfo, f_lens, "Lyot Plane - no Lyot Stop")
-    # proper.prop_propagate(wfo, f_lens, "Lyot Plane - with Lyot Stop")
-    # proper.prop_lens(wfo, f_lens, "Lyot Plane - no Lyot Stop")
-    # proper.prop_propagate(wfo, f_lens, "Lyot Plane - with Lyot Stop")
 
     # 9. Plot the wavefront at the Lyot Plane before Lyot Stop
     plt.figure(figsize=(12,8))
     amplitude_before_lyot = proper.prop_get_amplitude(wfo)
-    amplitude_before_lyot = np.fft.fftshift(amplitude_before_lyot)
     plt.imshow(amplitude_before_lyot, origin = "lower", cmap = plt.cm.gray)
     plt.title("Lyot Plane - Before Lyot Stop", fontsize = 18)
     plt.show()
@@ -100,12 +92,10 @@ def hlc_occulter(wavelength, diam, grid_size, beam_ratio, f_lens, pupil, fpm_rea
     plt.show()
 
     # 12. Propagate to the final image plane (detector)
-    # proper.prop_lens(wfo, f_lens, "Detector")
     proper.prop_propagate(wfo, f_lens, "Detector")
     proper.prop_lens(wfo, f_lens, "Detector")
     proper.prop_propagate(wfo, f_lens, "Detector")
     amplitude_detector = proper.prop_get_amplitude(wfo)
-    # amplitude_detector = np.fft.fftshift(amplitude_detector)
     plt.figure(figsize=(12,8))
     plt.imshow((amplitude_detector)**(1/4), origin = "lower", cmap = plt.cm.gray)
     plt.title("Final Image Plane (Detector)", fontsize = 18)
